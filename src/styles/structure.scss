@@ -1,0 +1,89 @@
+@import 'colors';
+
+#sidebar {
+    grid-area: sidebar;
+}
+
+#aside {
+    grid-area: aside;
+}
+
+#main {
+    grid-area: main;
+}
+
+#head {
+    grid-area: head;
+}
+
+#foot {
+    grid-area: foot;
+}
+
+#root {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-gap: .5em;
+    grid-template-rows: min-content 60px 1fr 1fr 80px;
+    grid-template-columns: auto;
+    grid-template-areas:
+        "head"
+        "sidebar"
+        "main"
+        "aside"
+        "foot"
+}
+
+@media only screen and (min-width: 600px) {
+    #root {
+        grid-template-rows: min-content 1fr 1fr 80px;
+        grid-template-columns: 100px auto;
+        grid-gap: 1em;
+        grid-template-areas:
+            "head    head"
+            "main    main"
+            "sidebar aside"
+            "foot    foot";
+    }
+}
+
+@media only screen and (min-width: 900px) {
+    #root {
+        grid-template-rows: min-content 1fr 80px;
+        grid-template-columns: 100px 2fr 1fr;
+        grid-template-areas:
+            "head    head head"
+            "sidebar main aside"
+            "foot    foot foot";
+    }
+}
+
+#root {
+    background-color: #fff;
+}
+
+.box {
+    background-color: $primary-light;
+    color: $text-dark;
+    border-radius: 3px;
+    padding: 10px;
+}
+
+#main {
+    background-color: $primary-dark;
+    color: $text-light;
+}
+
+#aside {
+    background-color: $primary-main;
+    color: $text-light;
+}
+
+#head,
+#foot {
+    background-color: $secondary-light;
+    color: $text-dark;
+    text-align: center;
+}
+
