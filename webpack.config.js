@@ -28,7 +28,11 @@ const config = {
           'postcss-loader',
           'sass-loader'
         ]
-      }
+      },
+      {
+        test: /\.csv$/,
+        use: ['csv-loader'],
+      },
     ]
   },
   plugins: [
