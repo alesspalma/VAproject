@@ -3,6 +3,7 @@ import * as d3 from 'd3'
 import schools from '../data/Datasets/Attributes/Schools.csv'
 // import buildings from '../data/Datasets/Attributes/Buildings.csv'
 import apartments from '../data/Datasets/Attributes/Apartments.csv'
+import financials from '../data/Datasets/Journals/FinancialJournal.csv'
 import './styles/index.scss'
 import countBySectors from '../countBySectors.json'
 import build from '../buildings_mod.json'
@@ -15,6 +16,7 @@ window.app = (new class {
     this.movement_data = []
     this.buildings = []
     this.apartments = []
+    this.financials = []
   }
 
   async init() {
@@ -48,6 +50,14 @@ window.app = (new class {
       const [lon, lat] = d.location.match(/-?\d+\.\d+/g).map(Number)
       d.location = { x: lon, y: lat }
     })
+
+    this.financials = financials.slice(1).map(row => ({
+      participantId: +row[0],
+      timestamp: new Date(row[1]),
+      category: row[2],
+      amount: +row[3]
+    }))
+
     console.log('init done!')
 
     // Call function to create visualization
@@ -59,22 +69,23 @@ window.app = (new class {
     const height = 8200
 
     const keys = ['Commercial', 'Residential', 'School', 'Pub', 'Restaurant']
+    const colors = ['rgb(228,26,28)', 'rgb(55,126,184)', 'rgb(255,127,0)', 'rgb(152,78,163)', 'rgb(77,175,74)', 'rgb(255,255,51)', 'rgb(166,86,40)']
     const color = d3.scaleOrdinal()
       .domain(keys)
-      .range(['rgb(228,26,28)', 'rgb(55,126,184)', 'rgb(255,127,0)', 'rgb(152,78,163)', 'rgb(77,175,74)'])
+      .range(colors)
 
     function buildingColours(att) {
       switch (att) {
         case 'Commercial':
-          return 'rgb(228,26,28)'
+          return colors[0]
         case 'Residential':
-          return 'rgb(55,126,184)'
+          return colors[1]
         case 'School':
-          return 'rgb(255,127,0)'
+          return colors[2]
         case 'Pub':
-          return 'rgb(152,78,163)'
+          return colors[3]
         case 'Restaurant':
-          return 'rgb(77,175,74)'
+          return colors[4]
         default:
           return 'black'
       }
@@ -138,7 +149,7 @@ window.app = (new class {
 
     // Draw where people live
     const people = svg1.append('g')
-      .attr('fill', 'rgb(166,86,40)')
+      .attr('fill', colors[6])
       .attr('stroke', 'darkgrey')
       .selectAll()
       .data(addresses)
@@ -152,13 +163,13 @@ window.app = (new class {
       if (selection) {
         const [[x0, y0], [x1, y1]] = selection
         value = people
-          .attr('fill', 'rgb(166,86,40)')
+          .attr('fill', colors[6])
           // d[0] is x, d[1] is y
           .filter(d => x0 <= d[0] && d[0] < x1 && y0 <= d[1] && d[1] < y1)
-          .attr('fill', 'rgb(255,255,51)')
+          .attr('fill', colors[5])
           .data()
       } else {
-        people.attr('fill', 'rgb(166,86,40)')
+        people.attr('fill', colors[6])
       }
 
       // Inform downstream cells that the selection has changed.
@@ -192,6 +203,79 @@ window.app = (new class {
       .style('alignment-baseline', 'middle')
       .attr('font-size', squareSize - 20)
     // end legend
+
+    // HISTOGRAM
+    //  dimensions for the plot
+    const histogramWidth = 400
+    const histogramHeight = 400
+    const margin = { top: 20, right: 20, bottom: 50, left: 60 }
+    const innerWidth = histogramWidth - margin.left - margin.right
+    const innerHeight = histogramHeight - margin.top - margin.bottom
+
+    // Append SVG
+    const svg = this.d3.select('.right').append('svg')
+      .attr('width', histogramWidth + margin.left + margin.right)
+      .attr('height', histogramHeight + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`)
+
+    // Aggregate financial for category summing the amount
+    const financialByCategory = this.d3.rollup(this.financials, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
+    console.log(financialByCategory)
+
+    // Scale for x-axis
+    const xScale = this.d3.scaleBand()
+      .domain(financialByCategory.keys().filter(d => d !== undefined))
+      .range([0, innerWidth]) // margin.left
+      .padding(0.1)
+
+    // Scale for y-axis
+    const yScale = this.d3.scaleLinear()
+      .domain([0, this.d3.max(financialByCategory, d => d[1])])
+      .nice()
+      .range([innerHeight, margin.top])
+
+    function financialColours(att) {
+      switch (att) {
+        case 'Wage':
+          return colors[0]
+        case 'Shelter':
+          return colors[1]
+        case 'Education':
+          return colors[2]
+        case 'RentAdjustment':
+          return colors[3]
+        case 'Food':
+          return colors[4]
+        case 'Recreation':
+          return colors[5]
+        default:
+          return 'black'
+      }
+    }
+
+    // Create the histogram bars
+    svg.selectAll('rect')
+      .data(financialByCategory)
+      .enter()
+      .append('rect')
+      .attr('x', d => xScale(d[0]))
+      .attr('y', d => yScale(d[1]))
+      .attr('width', xScale.bandwidth())
+      .attr('height', d => innerHeight - yScale(d[1]))
+      .attr('fill', d => financialColours(d[0]))
+
+    // Add x-axis
+    svg.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(xScale))
+      .selectAll('text')
+      .attr('transform', 'rotate(-45)')
+      .style('text-anchor', 'end')
+
+    // Add y-axis
+    svg.append('g')
+      .call(d3.axisLeft(yScale))
   }
 }())
 
