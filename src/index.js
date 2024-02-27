@@ -28,25 +28,33 @@ window.app = (new class {
 
     const data = slicedData.map(d => {
       // Extract the coordinates from the location string
-      const coordinatesString = d.location.substring(d.location.indexOf('((') + 2, d.location.indexOf('))'));
-      const coordinatesArray = coordinatesString.split(',').map(point => {
-        const [x, y] = point.trim().split(' ');
-        return [+x, +y]; // Convert coordinates to numbers
+      const coordinatesString = d.location.substring(d.location.indexOf('((') + 2, d.location.lastIndexOf('))'));
+      const rings = coordinatesString.split('), (').map(coordinates => {
+        return coordinates.split(',').map(point => {
+          const [x, y] = point.trim().split(' ').map(parseFloat); // Convert coordinates to numbers
+          return [x, y];
+        });
       });
 
-      // Update the min and max values
-      const x = d3.min(coordinatesArray, d => d[0]);
-      if (x < minX) minX = x;
-      const y = d3.max(coordinatesArray, d => d[1]);
-      if (y > maxY) maxY = y;
-
       // Create the GeoJSON-compatible format
+      const polygon = {
+        type: "Polygon",
+        coordinates: [rings[0]] // First set of coordinates is the exterior ring
+      };
+
+      // If there are interior rings, add them to the polygon
+      if (rings.length > 1) {
+        polygon.coordinates.push(...rings.slice(1)); // Add interior rings (holes)
+      }
+
+      for (let i = 0; i < polygon.coordinates.length; i++) {
+        minX = Math.min(minX, d3.min(polygon.coordinates[i], d => d[0]));
+        maxY = Math.max(maxY, d3.max(polygon.coordinates[i], d => d[1]));
+      }
+
       return {
         buildingId: +d.buildingId,
-        location: {
-          type: "Polygon",
-          coordinates: [coordinatesArray]
-        },
+        location: polygon,
         buildingType: d.buildingType,
         maxOccupancy: +d.maxOccupancy,
         units: d.units ? JSON.parse(d.units) : null
@@ -56,14 +64,14 @@ window.app = (new class {
     // Define the dimensions of the SVG container
     const width = 855;
     const height = 600;
-    const scale = 0.1;
+    const scale = 0.095;
 
     // Create an SVG element
     const svg = d3.select("#main").append("svg")
       .attr("width", "100%")
       .attr("height", "100%")
       .append("g")
-      .attr("transform", "translate(" + (-1 * minX * scale) + "," + (-1 * -maxY * scale) + ") scale(" + scale + ")");
+      .attr("transform", "translate(" + (-minX * scale) + "," + (maxY * scale) + ") scale(" + scale + ")");
 
     // Define a projection (assuming the data is in a projected coordinate system)
     const projection = d3.geoIdentity().reflectY(true);
