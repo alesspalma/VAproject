@@ -1,75 +1,112 @@
+// @import 'colors';
+
+// #aside {
+//     grid-area: aside;
+// }
+
+// #main {
+//     grid-area: main;
+// }
+
+// #foot {
+//     grid-area: foot;
+// }
+
+// #root {
+//     width: 100vw;
+//     height: 100vh;
+//     display: grid;
+//     grid-gap: .5em;
+//     grid-template-rows: min-content 1fr 80px;
+//     grid-template-columns: auto;
+//     grid-template-areas:
+//         "main"
+//         "aside"
+//         "foot"
+// }
+
+// @media only screen and (min-width: 600px) {
+//     #root {
+//         grid-template-rows: min-content 1fr 1fr 80px;
+//         grid-template-columns: auto;
+//         grid-gap: 1em;
+//         grid-template-areas:
+//             "main    main"
+//             "aside   aside"
+//             "foot    foot";
+//     }
+// }
+
+// @media only screen and (min-width: 900px) {
+//     #root {
+//         grid-template-rows: min-content 1fr 80px;
+//         grid-template-columns: 2fr 1fr; //1fr 2fr;
+//         grid-template-areas: "main    aside aside"
+//             "foot    foot foot";
+//     }
+// }
+
+// #root {
+//     background-color: #fff;
+// }
+
+// .box {
+//     background-color: $primary-light;
+//     color: $text-dark;
+//     border-radius: 3px;
+//     padding: 10px;
+// }
+
+// #main {
+//     background-color: $primary-dark;
+//     color: $text-light;
+// }
+
+// #aside {
+//     background-color: $primary-main;
+//     color: $text-light;
+// }
+
+// #foot {
+//     background-color: $secondary-light;
+//     color: $text-dark;
+//     text-align: center;
+// }
+
 @import 'colors';
 
-#aside {
-    grid-area: aside;
+body,
+html {
+    height: 100%;
+    margin: 0;
 }
 
-#main {
-    grid-area: main;
+.wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-#foot {
-    grid-area: foot;
+.container {
+    flex: 4;
+    display: flex;
+    flex-direction: row;
 }
 
-#root {
-    width: 100vw;
-    height: 100vh;
-    display: grid;
-    grid-gap: .5em;
-    grid-template-rows: min-content 1fr 80px;
-    grid-template-columns: auto;
-    grid-template-areas:
-        "main"
-        "aside"
-        "foot"
+.left {
+    flex: 1;
+    background-color: #eee;
+    /* Red for visibility */
 }
 
-@media only screen and (min-width: 600px) {
-    #root {
-        grid-template-rows: min-content 1fr 1fr 80px;
-        grid-template-columns: auto;
-        grid-gap: 1em;
-        grid-template-areas:
-            "main    main"
-            "aside   aside"
-            "foot    foot";
-    }
+.right {
+    flex: 2;
+    background-color: #0f0;
+    /* Green for visibility */
 }
 
-@media only screen and (min-width: 900px) {
-    #root {
-        grid-template-rows: min-content 1fr 80px;
-        grid-template-columns: 1fr 2fr;
-        grid-template-areas:
-            "main    aside aside"
-            "foot    foot foot";
-    }
-}
-
-#root {
-    background-color: #fff;
-}
-
-.box {
-    background-color: $primary-light;
-    color: $text-dark;
-    border-radius: 3px;
-    padding: 10px;
-}
-
-#main {
-    background-color: $primary-dark;
-    color: $text-light;
-}
-
-#aside {
-    background-color: $primary-main;
-    color: $text-light;
-}
-
-#foot {
-    background-color: $secondary-light;
-    color: $text-dark;
-    text-align: center;
+.footer {
+    flex: 1;
+    background-color: #00f;
+    /* Blue for visibility */
 }

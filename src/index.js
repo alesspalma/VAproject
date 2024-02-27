@@ -1,18 +1,17 @@
 import 'normalize.css'
 import * as d3 from 'd3'
-import loadedData from '../data/Datasets/Attributes/Schools.csv'
+import schools from '../data/Datasets/Attributes/Schools.csv'
 // import buildings from '../data/Datasets/Attributes/Buildings.csv'
 import apartments from '../data/Datasets/Attributes/Apartments.csv'
 import './styles/index.scss'
-//import movement from '../movement_split00.csv'
 import countBySectors from '../countBySectors.json'
-import build from '../buildings.json'
+import build from '../buildings_mod.json'
 import * as topojson from 'topojson-client'
 
 window.app = (new class {
   constructor() {
     this.d3 = d3
-    this.data = []
+    this.schools = []
     this.movement_data = []
     this.buildings = []
     this.apartments = []
@@ -20,32 +19,19 @@ window.app = (new class {
 
   async init() {
     // Convert the array of arrays into an array of objects
-    console.log(loadedData)
-    this.data = loadedData.slice(1).map(row => ({
+    this.schools = schools.slice(1).map(row => ({
       schoolId: +row[0],
       monthlyCost: +row[1],
       maxEnrollment: +row[2],
       location: row[3],
       buildingId: +row[4]
     }))
-    console.log(this.data)
 
     // Parse location from string to object
-    this.data.forEach(d => {
+    this.schools.forEach(d => {
       const [lon, lat] = d.location.match(/-?\d+\.\d+/g).map(Number)
       d.location = { x: lon, y: lat }
     })
-
-    // console.log(movement.slice(0, 10))
-    // this.movement_data = movement.map(row => (
-    //   {
-    //     time: row[0],
-    //     x: +row[1],
-    //     y: +row[2],
-    //     id: +row[3]
-    //   }
-    // ))
-    // console.log(this.movement_data.slice(0, 10))
 
     this.buildings = build
 
@@ -62,199 +48,52 @@ window.app = (new class {
       const [lon, lat] = d.location.match(/-?\d+\.\d+/g).map(Number)
       d.location = { x: lon, y: lat }
     })
-    console.log(this.apartments)
+    console.log('init done!')
 
     // Call function to create visualization
     this.createVisualization()
   }
 
   createVisualization() {
-    // // Select the main container
-    // const mainContainer = this.d3.select('#main')
-
-    // // SVG dimensions
-    // const margin = { top: 20, right: 20, bottom: 50, left: 50 }
-    // const width = 800 - margin.left - margin.right
-    // const height = 600 - margin.top - margin.bottom
-
-    // // Create SVG
-    // const svg = mainContainer.append('svg')
-    //   .attr('width', width + margin.left + margin.right)
-    //   .attr('height', height + margin.top + margin.bottom)
-    //   .append('g')
-    //   .attr('transform', `translate(${margin.left},${margin.top})`)
-
-    // // Scales
-    // const xScale = this.d3.scaleLinear()
-    //   .domain([0, this.d3.max(this.data, d => d.monthlyCost) + 10])
-    //   .range([0, width])
-
-    // const yScale = this.d3.scaleLinear()
-    //   .domain([0, this.d3.max(this.data, d => d.maxEnrollment) + 50])
-    //   .range([height, 0])
-
-    // // Draw circles
-    // svg.selectAll('circle')
-    //   .data(this.data)
-    //   .enter().append('circle')
-    //   .attr('cx', d => xScale(d.monthlyCost))
-    //   .attr('cy', d => yScale(d.maxEnrollment))
-    //   .attr('r', 6)
-
-    // // Add labels
-    // svg.selectAll('text')
-    //   .data(this.data)
-    //   .enter().append('text')
-    //   .attr('x', d => xScale(d.monthlyCost) + 10)
-    //   .attr('y', d => yScale(d.maxEnrollment) + 5)
-    //   .text(d => `School ${d.schoolId}`)
-
-    // // Add axes
-    // const xAxis = this.d3.axisBottom(xScale)
-    // const yAxis = this.d3.axisLeft(yScale)
-
-    // svg.append('g')
-    //   .attr('transform', `translate(0,${height})`)
-    //   .call(xAxis)
-
-    // svg.append('g')
-    //   .call(yAxis)
-
-    // // Add axis labels
-    // svg.append('text')
-    //   .attr('transform', `translate(${width / 2},${height + margin.top + 20})`)
-    //   .style('text-anchor', 'middle')
-    //   .text('Monthly Cost')
-
-    // svg.append('text')
-    //   .attr('transform', 'rotate(-90)')
-    //   .attr('y', 0 - margin.left)
-    //   .attr('x', 0 - (height / 2))
-    //   .attr('dy', '1em')
-    //   .style('text-anchor', 'middle')
-    //   .text('Max Enrollment')
-
-    // MAP
-    // Select the main container
-    // const mainContainer = this.d3.select('#main')
-
-    // // SVG dimensions
-    // const margin = { top: 20, right: 20, bottom: 50, left: 50 }
-    // const width = 800 - margin.left - margin.right
-    // const height = 600 - margin.top - margin.bottom
-
-    // // Create SVG
-    // const svg = mainContainer.append('svg')
-    //   .attr('width', width + margin.left + margin.right)
-    //   .attr('height', height + margin.top + margin.bottom)
-    //   .append('g')
-    //   .attr('transform', `translate(${margin.left},${margin.top})`)
-
-    // // Scales
-    // const xScale = this.d3.scaleLinear()
-    //   .domain([this.d3.min(this.movement_data, d => d.x) - 50, this.d3.max(this.movement_data, d => d.x) + 50])
-    //   .range([0, width])
-
-    // const yScale = this.d3.scaleLinear()
-    //   .domain([this.d3.min(this.movement_data, d => d.y) - 50, this.d3.max(this.movement_data, d => d.y) + 50])
-    //   .range([height, 0])
-
-    // // Draw circles
-    // svg.selectAll('circle')
-    //   .data(this.movement_data)
-    //   .enter().append('circle')
-    //   .attr('cx', d => xScale(d.x))
-    //   .attr('cy', d => yScale(d.y))
-    //   .attr('r', 2)
-
-    // // Add axes
-    // const xAxis = this.d3.axisBottom(xScale)
-    // const yAxis = this.d3.axisLeft(yScale)
-
-    // svg.append('g')
-    //   .attr('transform', `translate(0,${height})`)
-    //   .call(xAxis)
-
-    // svg.append('g')
-    //   .call(yAxis)
-
-    // // Add axis labels
-    // svg.append('text')
-    //   .attr('transform', `translate(${width / 2},${height + margin.top + 20})`)
-    //   .style('text-anchor', 'middle')
-    //   .text('X')
-
-    // svg.append('text')
-    //   .attr('transform', 'rotate(-90)')
-    //   .attr('y', 0 - margin.left)
-    //   .attr('x', 0 - (height / 2))
-    //   .attr('dy', '1em')
-    //   .style('text-anchor', 'middle')
-    //   .text('Y')
-
-    // HISTOGRAM
-    // Define dimensions for the plot
-    // const width = 1600
-    // const height = 600
-    // const margin = { top: 20, right: 20, bottom: 50, left: 50 }
-    // const innerWidth = width - margin.left - margin.right
-    // const innerHeight = height - margin.top - margin.bottom
-
-    // // Append SVG
-    // const svg = this.d3.select('#main').append('svg')
-    //   .attr('width', width + margin.left + margin.right)
-    //   .attr('height', height + margin.top + margin.bottom)
-    //   .append('g')
-    //   .attr('transform', `translate(${margin.left},${margin.top})`)
-
-    // // Scale for x-axis
-    // const xScale = d3.scaleBand()
-    //   .domain(countBySectors.map(d => d.id))
-    //   .range([margin.left, innerWidth])
-    //   .padding(0.1)
-
-    // // Scale for y-axis
-    // const yScale = d3.scaleLinear()
-    //   .domain([0, d3.max(countBySectors, d => d.count)])
-    //   .nice()
-    //   .range([innerHeight, margin.top])
-
-    // // Create the histogram bars
-    // svg.selectAll('rect')
-    //   .data(countBySectors)
-    //   .enter().append('rect')
-    //   .attr('x', d => xScale(d.id))
-    //   .attr('y', d => yScale(d.count))
-    //   .attr('width', xScale.bandwidth())
-    //   .attr('height', d => innerHeight - yScale(d.count))
-    //   .attr('fill', 'white')
-
-    // // Add x-axis
-    // svg.append('g')
-    //   .attr('transform', `translate(0,${innerHeight})`)
-    //   .call(d3.axisBottom(xScale).tickValues(xScale.domain().filter(function (d, i) {
-    //     return !(i % 10)
-    //   })))
-    //   .selectAll('text') // select all the text elements for x-axis
-    //   .style('text-anchor', 'end') // set text-anchor to end
-    //   .attr('dx', '-.8em') // set position of the labels
-    //   .attr('dy', '.15em') // set position of the labels
-    //   .attr('transform', 'rotate(-45)') // rotate labels by -45 degrees
-
-    // // Add y-axis
-    // svg.append('g')
-    //   .attr('transform', `translate(${margin.left},0)`)
-    //   .call(d3.axisLeft(yScale))
-
     const width = 8000
     const height = 8200
 
-    const mainContainer = this.d3.select('#main')
+    const keys = ['Commercial', 'Residential', 'School', 'Pub', 'Restaurant']
+    const color = d3.scaleOrdinal()
+      .domain(keys)
+      .range(['rgb(228,26,28)', 'rgb(55,126,184)', 'rgb(255,127,0)', 'rgb(152,78,163)', 'rgb(77,175,74)'])
 
-    const zoom = d3.zoom().scaleExtent([1, 1 << 10]).extent([[0, 0], [width, height]]).translateExtent([[0, 0], [width, height]]).on('zoom', zoomed)
+    function buildingColours(att) {
+      switch (att) {
+        case 'Commercial':
+          return 'rgb(228,26,28)'
+        case 'Residential':
+          return 'rgb(55,126,184)'
+        case 'School':
+          return 'rgb(255,127,0)'
+        case 'Pub':
+          return 'rgb(152,78,163)'
+        case 'Restaurant':
+          return 'rgb(77,175,74)'
+        default:
+          return 'black'
+      }
+    }
+
+    const mainContainer = this.d3.select('.left')
+
+    const zoom = d3.zoom().scaleExtent([1, 1 << 3]).extent([[0, 0], [width, height]]).translateExtent([[0, 0], [width, height]]).on('zoom', zoomed)
+
+    const minX = -5000
+    const maxY = -8000
+    // const scale = 0.095
 
     const svg1 = mainContainer.append('svg')
-      .attr('viewBox', [-5000, -8000, width, height])
+      // .attr("width", "100%")
+      // .attr("height", "100%")
+      // .append("g")
+      // .attr("transform", "translate(" + (-minX * scale) + "," + (maxY * scale) + ") scale(" + scale + ")")
+      .attr('viewBox', [minX, maxY, width, height])
 
     // Create a projection that flips the Y axis.
     const projection = d3.geoTransform({
@@ -265,18 +104,29 @@ window.app = (new class {
 
     const path = d3.geoPath().projection(projection)
 
-    svg1.append('path')
-      .datum(topojson.merge(this.buildings, this.buildings.objects.buildings.geometries))
-      .attr('fill', '#ddd')
+    // Set the buildings colors
+    svg1.append('g')
+      .selectAll('path')
+      .data(topojson.feature(this.buildings, this.buildings.objects.buildings).features)
+      .join('path')
+      .attr('fill', d => buildingColours(d.properties.buildingType))
       .attr('d', path)
 
+    // Draw the buildings
+    svg1.append('path')
+      .datum(topojson.merge(this.buildings, this.buildings.objects.buildings.geometries))
+      .attr('fill', 'none')
+      .attr('d', path)
+
+    // Draw the edge of the buildings
     svg1.append('path')
       .datum(topojson.mesh(this.buildings, this.buildings.objects.buildings))
       .attr('fill', 'none')
-      .attr('stroke', 'black')
+      .attr('stroke', 'darkgrey')
       .attr('stroke-linejoin', 'round')
       .attr('d', path)
 
+    // zooming stuff
     mainContainer.call(zoom)
     function zoomed(event) {
       const { transform } = event
@@ -286,14 +136,62 @@ window.app = (new class {
 
     const addresses = this.apartments.map(d => [d.location.x, -d.location.y])
 
-    svg1.append('g')
-      .attr('fill', 'black')
-      .attr('stroke', 'black')
+    // Draw where people live
+    const people = svg1.append('g')
+      .attr('fill', 'rgb(166,86,40)')
+      .attr('stroke', 'darkgrey')
       .selectAll()
       .data(addresses)
       .join('circle')
       .attr('transform', d => `translate(${d})`)
-      .attr('r', 10)
+      .attr('r', 15)
+
+    // Create the brush behavior.
+    svg1.call(d3.brush().on('start brush end', ({ selection }) => {
+      let value = []
+      if (selection) {
+        const [[x0, y0], [x1, y1]] = selection
+        value = people
+          .attr('fill', 'rgb(166,86,40)')
+          // d[0] is x, d[1] is y
+          .filter(d => x0 <= d[0] && d[0] < x1 && y0 <= d[1] && d[1] < y1)
+          .attr('fill', 'rgb(255,255,51)')
+          .data()
+      } else {
+        people.attr('fill', 'rgb(166,86,40)')
+      }
+
+      // Inform downstream cells that the selection has changed.
+      svg1.property('value', value).dispatch('input')
+    }))
+
+    // Legend for the map
+    const squareSize = 140
+    const legendX = -4700
+    const legendY = -200
+
+    svg1.selectAll('squares')
+      .data(keys)
+      .enter()
+      .append('rect')
+      .attr('x', legendX)
+      .attr('y', function (d, i) { return legendY - i * (squareSize + 20) })
+      .attr('width', squareSize)
+      .attr('height', squareSize)
+      .style('fill', function (d) { return color(d) })
+
+    svg1.selectAll('mylabels')
+      .data(keys)
+      .enter()
+      .append('text')
+      .attr('x', legendX + squareSize * 1.2)
+      .attr('y', function (d, i) { return legendY - i * (squareSize + 20) + (squareSize / 2) })
+      .style('fill', 'black')
+      .text(function (d) { return d })
+      .attr('text-anchor', 'left')
+      .style('alignment-baseline', 'middle')
+      .attr('font-size', squareSize - 20)
+    // end legend
   }
 }())
 
