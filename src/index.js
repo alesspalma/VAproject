@@ -3,11 +3,14 @@ import * as d3 from 'd3'
 import schools from '../data/Datasets/Attributes/Schools.csv'
 // import buildings from '../data/Datasets/Attributes/Buildings.csv'
 import apartments from '../data/Datasets/Attributes/Apartments.csv'
-import financials from '../data/Datasets/Journals/FinancialJournal.csv'
+import home from '../atHome.csv'
+import financials from '../AggregatedFinancialJournal.csv'
 import './styles/index.scss'
 import countBySectors from '../countBySectors.json'
 import build from '../buildings_mod.json'
 import * as topojson from 'topojson-client'
+import BarChart from './BarChart'
+
 
 window.app = (new class {
   constructor() {
@@ -17,6 +20,7 @@ window.app = (new class {
     this.buildings = []
     this.apartments = []
     this.financials = []
+    this.homes = []
   }
 
   async init() {
@@ -37,6 +41,12 @@ window.app = (new class {
 
     this.buildings = build
 
+    this.homes = home.slice(1).map(row => ({
+      date: row[0],
+      participantId: +row[2],
+      apartmentId: +row[6]
+    }))
+
     this.apartments = apartments.slice(1).map(row => ({
       apartmentId: +row[0],
       rentalCost: +row[1],
@@ -53,11 +63,11 @@ window.app = (new class {
 
     this.financials = financials.slice(1).map(row => ({
       participantId: +row[0],
-      timestamp: new Date(row[1]),
-      category: row[2],
-      amount: +row[3]
-    }))
+      category: row[1],
+      amount: +row[2]
+    })).filter(d => d.category !== 'Wage')
 
+    console.log(this.financials)
     console.log('init done!')
 
     // Call function to create visualization
@@ -145,48 +155,38 @@ window.app = (new class {
       svg1.attr('transform', transform.toString())
     }
 
-    const addresses = this.apartments.map(d => [d.location.x, -d.location.y])
+    // join the apartmentId from apartments with the apartmentId of the homes
+    this.homes.filter(d => ((!isNaN(d.apartmentId)) && (d.apartmentId !== 0))).forEach(d => {
+      const apartment = this.apartments.find(a => a.apartmentId === d.apartmentId)
+      d.location = { x: apartment.location.x, y: -apartment.location.y }
+    })
+
+    // const addresses = this.apartments.map(d => [d.location.x, -d.location.y])
 
     // Draw where people live
     const people = svg1.append('g')
       .attr('fill', colors[6])
       .attr('stroke', 'darkgrey')
       .selectAll()
-      .data(addresses)
+      .data(this.homes.filter(d => d.location !== undefined))
       .join('circle')
-      .attr('transform', d => `translate(${d})`)
+      .attr('transform', d => `translate(${d.location.x},${d.location.y})`)
       .attr('r', 15)
 
-    // Create the brush behavior.
-    svg1.call(d3.brush().on('start brush end', ({ selection }) => {
-      let value = []
-      if (selection) {
-        const [[x0, y0], [x1, y1]] = selection
-        value = people
-          .attr('fill', colors[6])
-          // d[0] is x, d[1] is y
-          .filter(d => x0 <= d[0] && d[0] < x1 && y0 <= d[1] && d[1] < y1)
-          .attr('fill', colors[5])
-          .data()
-      } else {
-        people.attr('fill', colors[6])
-      }
-
-      // Inform downstream cells that the selection has changed.
-      svg1.property('value', value).dispatch('input')
-    }))
+    console.log(people)
 
     // Legend for the map
     const squareSize = 140
     const legendX = -4700
     const legendY = -200
+    const legendPad = 20
 
     svg1.selectAll('squares')
       .data(keys)
       .enter()
       .append('rect')
       .attr('x', legendX)
-      .attr('y', function (d, i) { return legendY - i * (squareSize + 20) })
+      .attr('y', function (d, i) { return legendY - i * (squareSize + legendPad) })
       .attr('width', squareSize)
       .attr('height', squareSize)
       .style('fill', function (d) { return color(d) })
@@ -196,86 +196,43 @@ window.app = (new class {
       .enter()
       .append('text')
       .attr('x', legendX + squareSize * 1.2)
-      .attr('y', function (d, i) { return legendY - i * (squareSize + 20) + (squareSize / 2) })
+      .attr('y', function (d, i) { return legendY - i * (squareSize + legendPad) + (squareSize / 2) })
       .style('fill', 'black')
       .text(function (d) { return d })
       .attr('text-anchor', 'left')
       .style('alignment-baseline', 'middle')
-      .attr('font-size', squareSize - 20)
+      .attr('font-size', squareSize - legendPad)
     // end legend
 
     // HISTOGRAM
-    //  dimensions for the plot
-    const histogramWidth = 400
-    const histogramHeight = 400
-    const margin = { top: 20, right: 20, bottom: 50, left: 60 }
-    const innerWidth = histogramWidth - margin.left - margin.right
-    const innerHeight = histogramHeight - margin.top - margin.bottom
-
-    // Append SVG
-    const svg = this.d3.select('.right').append('svg')
-      .attr('width', histogramWidth + margin.left + margin.right)
-      .attr('height', histogramHeight + margin.top + margin.bottom)
-      .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`)
-
     // Aggregate financial for category summing the amount
-    const financialByCategory = this.d3.rollup(this.financials, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
-    console.log(financialByCategory)
+    let financialByCategory = this.d3.rollup(this.financials, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
 
-    // Scale for x-axis
-    const xScale = this.d3.scaleBand()
-      .domain(financialByCategory.keys().filter(d => d !== undefined))
-      .range([0, innerWidth]) // margin.left
-      .padding(0.1)
+    const bc = new BarChart()
+    bc.initChart(d3.select('.right'), financialByCategory)
 
-    // Scale for y-axis
-    const yScale = this.d3.scaleLinear()
-      .domain([0, this.d3.max(financialByCategory, d => d[1])])
-      .nice()
-      .range([innerHeight, margin.top])
-
-    function financialColours(att) {
-      switch (att) {
-        case 'Wage':
-          return colors[0]
-        case 'Shelter':
-          return colors[1]
-        case 'Education':
-          return colors[2]
-        case 'RentAdjustment':
-          return colors[3]
-        case 'Food':
-          return colors[4]
-        case 'Recreation':
-          return colors[5]
-        default:
-          return 'black'
+    // Create the brush behavior.
+    svg1.call(d3.brush().on('end', ({ selection }) => {
+      let value = []
+      if (selection) {
+        const [[x0, y0], [x1, y1]] = selection
+        value = people
+          .attr('fill', colors[6])
+          .filter(d => x0 <= d.location.x && d.location.x <= x1 && y0 <= d.location.y && d.location.y <= y1)
+          .attr('fill', colors[5])
+        // filter financials by participantId and aggregate by category summing the amount for the selected people
+        financialByCategory = this.d3.rollup(this.financials.filter(p => value.data().map(d => d.participantId).includes(p.participantId)), v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
+        console.log(financialByCategory)
+        bc.updateChart(financialByCategory)
+      } else {
+        people.attr('fill', colors[6])
+        financialByCategory = this.d3.rollup(this.financials, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
+        bc.updateChart(financialByCategory)
       }
-    }
 
-    // Create the histogram bars
-    svg.selectAll('rect')
-      .data(financialByCategory)
-      .enter()
-      .append('rect')
-      .attr('x', d => xScale(d[0]))
-      .attr('y', d => yScale(d[1]))
-      .attr('width', xScale.bandwidth())
-      .attr('height', d => innerHeight - yScale(d[1]))
-      .attr('fill', d => financialColours(d[0]))
-
-    // Add x-axis
-    svg.append('g')
-      .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale))
-      .selectAll('text')
-      .attr('transform', 'rotate(-45)')
-      .style('text-anchor', 'end')
-
-    // Add y-axis
-    svg.append('g')
-      .call(d3.axisLeft(yScale))
+      // Inform downstream cells that the selection has changed.
+      svg1.property('value', value).dispatch('input')
+    }))
   }
 }())
 
