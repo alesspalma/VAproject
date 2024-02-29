@@ -1,6 +1,7 @@
 import 'normalize.css'
 import * as d3 from 'd3'
-import loadedData from '../data/Attributes/Buildings.csv'
+import buildings from '../data/Datasets/Attributes/Buildings.csv'
+import participants from '../data/Datasets/Attributes/ParticipantsWithEngels.csv'
 import './styles/index.scss'
 
 window.app = (new class {
@@ -11,8 +12,7 @@ window.app = (new class {
 
   async init() {
     // await someFunctionThatLoadData
-    let slicedData = loadedData.slice(1);
-    slicedData = slicedData.map(d => (
+    let slicedBuildings = buildings.slice(1).map(d => (
       {
         buildingId: +d[0],
         location: d[1],
@@ -21,12 +21,27 @@ window.app = (new class {
         units: d[4]
       }
     ))
-    console.log(slicedData)
+
+    let slicedParticipants = participants.slice(1, participants.length - 1).map(d => ( // messo slice fino a participants.length - 1 perche' l'ultimo elemento e' vuoto attualmente
+      {
+        participantId: +d[0],
+        householdSize: +d[1],
+        haveKids: d[2] == "TRUE" ? true : false,
+        age: +d[3],
+        educationLevel: d[4],
+        interestGroup: d[5],
+        joviality: +d[6],
+        engels: +d[7]
+      }
+    ))
+    console.log(slicedParticipants)
+
+
     // Initialize your app
     let minX = Infinity;
     let maxY = -Infinity;
 
-    const data = slicedData.map(d => {
+    const data = slicedBuildings.map(d => {
       // Extract the coordinates from the location string
       const coordinatesString = d.location.substring(d.location.indexOf('((') + 2, d.location.lastIndexOf('))'));
       const rings = coordinatesString.split('), (').map(coordinates => {
@@ -62,12 +77,12 @@ window.app = (new class {
     });
 
     // Define the dimensions of the SVG container
-    const width = 855;
-    const height = 600;
-    const scale = 0.095;
+    const widthMap = 855;
+    const heightMap = 600;
+    const scale = 0.08;
 
     // Create an SVG element
-    const svg = d3.select("#main").append("svg")
+    const svgMap = d3.select(".left").append("svg")
       .attr("width", "100%")
       .attr("height", "100%")
       .append("g")
@@ -80,13 +95,87 @@ window.app = (new class {
     const path = d3.geoPath().projection(projection);
 
     // Draw the buildings
-    svg.selectAll("path")
+    svgMap.selectAll("path")
       .data(data)
       .enter().append("path")
       .attr("d", d => path({ "type": "Polygon", "coordinates": d.location.coordinates }))
       .attr("stroke", "black")
       .attr("fill", "gray")
       .attr("opacity", 0.7);
+
+    // #############################################################################################
+
+    // set the dimensions and margins of the graph
+    const marginPP = { top: 30, right: 10, bottom: 10, left: 10 }
+    const widthPP = 1500 - marginPP.left - marginPP.right
+    const heightPP = 220 - marginPP.top - marginPP.bottom
+
+    // append the svg object to the body of the page
+    const svg = d3.select(".footer")
+      .append("svg")
+      .attr("width", widthPP + marginPP.left + marginPP.right)
+      .attr("height", heightPP + marginPP.top + marginPP.bottom)
+      .append("g")
+      .attr("transform", `translate(${marginPP.left},${marginPP.top})`);
+
+
+    // Extract the list of dimensions we want to keep in the plot
+    // let dimensions = Object.keys(slicedParticipants[0]).filter(function (d) { return d != "participantId" })
+    let linearDimensions = ["householdSize", "age", "joviality", "engels"]
+    let categoricalDimensions = ["haveKids", "interestGroup", "educationLevel"]
+    let dimensions = linearDimensions.concat(categoricalDimensions)
+
+    // For each linear dimension, I build a linear scale. I store all in a y object
+    const y = {}
+    for (let i in linearDimensions) {
+      let attribute = linearDimensions[i]
+      y[attribute] = d3.scaleLinear()
+        .domain(d3.extent(slicedParticipants, function (d) { return +d[attribute]; }))
+        .range([heightPP, 0])
+    }
+    for (let i in categoricalDimensions) {
+      let attribute = categoricalDimensions[i]
+      y[attribute] = d3.scalePoint()
+        .domain(slicedParticipants.map(function (d) { return d[attribute]; }))
+        .range([heightPP, 0])
+    }
+
+    // Build the X scale -> it find the best position for each Y axis
+    let x = d3.scalePoint()
+      .range([0, widthPP])
+      .padding(1)
+      .domain(dimensions);
+
+    // The path function takes a row of the csv as input, and return x and y coordinates of the line to draw for this raw.
+    function pathDrawer(d) {
+      return d3.line()(dimensions.map(function (p) { return [x(p), y[p](d[p])]; }));
+    }
+
+    // Draw the lines
+    svg.selectAll("myPath")
+      .data(slicedParticipants)
+      .join("path")
+      .attr("d", pathDrawer)
+      .style("fill", "none")
+      .style("stroke", "#69b3a2")
+      .style("opacity", 0.5)
+
+    // Draw the axis:
+    svg.selectAll("myAxis")
+      // For each dimension of the dataset I add a 'g' element:
+      .data(dimensions).enter()
+      .append("g")
+      // I translate this element to its right position on the x axis
+      .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
+      // And I build the axis with the call function
+      .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
+      // Add axis title
+      .append("text")
+      .style("text-anchor", "middle")
+      .attr("y", -9)
+      .text(function (d) { return d; })
+      .style("fill", "black")
+
   }
 }())
 

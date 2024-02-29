@@ -295,4 +295,6 @@ GitHub.sublime-settings
 # data folder
 data/
 
+preprocessing/
+
 movement*.csv
