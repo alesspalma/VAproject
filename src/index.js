@@ -2,6 +2,7 @@ import 'normalize.css'
 import * as d3 from 'd3'
 import buildings from '../data/Datasets/Attributes/Buildings.csv'
 import participants from '../data/Datasets/Attributes/ParticipantsWithEngels.csv'
+import droppedOut from '../data/Datasets/Attributes/DroppedOut.csv'
 import './styles/index.scss'
 
 window.app = (new class {
@@ -21,8 +22,9 @@ window.app = (new class {
         units: d[4]
       }
     ))
+    let listDroppedOut = droppedOut.slice(1).map(d => +d[0])
 
-    let slicedParticipants = participants.slice(1, participants.length - 1).map(d => ( // messo slice fino a participants.length - 1 perche' l'ultimo elemento e' vuoto attualmente
+    let slicedParticipants = participants.slice(1).filter(d => !(listDroppedOut.includes(+d[0]))).map(d => (
       {
         participantId: +d[0],
         householdSize: +d[1],
@@ -34,8 +36,6 @@ window.app = (new class {
         engels: +d[7]
       }
     ))
-    console.log(slicedParticipants)
-
 
     // Initialize your app
     let minX = Infinity;
@@ -79,26 +79,26 @@ window.app = (new class {
     // Define the dimensions of the SVG container
     const widthMap = 855;
     const heightMap = 600;
-    const scale = 0.08;
+    const scaleMap = 0.08;
 
     // Create an SVG element
     const svgMap = d3.select(".left").append("svg")
       .attr("width", "100%")
       .attr("height", "100%")
       .append("g")
-      .attr("transform", "translate(" + (-minX * scale) + "," + (maxY * scale) + ") scale(" + scale + ")");
+      .attr("transform", "translate(" + (-minX * scaleMap) + "," + (maxY * scaleMap) + ") scale(" + scaleMap + ")");
 
     // Define a projection (assuming the data is in a projected coordinate system)
     const projection = d3.geoIdentity().reflectY(true);
 
     // Create a path generator
-    const path = d3.geoPath().projection(projection);
+    const pathMap = d3.geoPath().projection(projection);
 
     // Draw the buildings
     svgMap.selectAll("path")
       .data(data)
       .enter().append("path")
-      .attr("d", d => path({ "type": "Polygon", "coordinates": d.location.coordinates }))
+      .attr("d", d => pathMap({ "type": "Polygon", "coordinates": d.location.coordinates }))
       .attr("stroke", "black")
       .attr("fill", "gray")
       .attr("opacity", 0.7);
@@ -116,11 +116,11 @@ window.app = (new class {
       .attr("width", widthPP + marginPP.left + marginPP.right)
       .attr("height", heightPP + marginPP.top + marginPP.bottom)
       .append("g")
+      .attr("id", "pplot")
       .attr("transform", `translate(${marginPP.left},${marginPP.top})`);
 
 
     // Extract the list of dimensions we want to keep in the plot
-    // let dimensions = Object.keys(slicedParticipants[0]).filter(function (d) { return d != "participantId" })
     let linearDimensions = ["householdSize", "age", "joviality", "engels"]
     let categoricalDimensions = ["haveKids", "interestGroup", "educationLevel"]
     let dimensions = linearDimensions.concat(categoricalDimensions)
@@ -136,7 +136,7 @@ window.app = (new class {
     for (let i in categoricalDimensions) {
       let attribute = categoricalDimensions[i]
       y[attribute] = d3.scalePoint()
-        .domain(slicedParticipants.map(function (d) { return d[attribute]; }))
+        .domain(attribute == "educationLevel" ? ["Low", "HighSchoolOrCollege", "Bachelors", "Graduate"] : slicedParticipants.map(function (d) { return d[attribute]; }).sort())
         .range([heightPP, 0])
     }
 
@@ -152,7 +152,7 @@ window.app = (new class {
     }
 
     // Draw the lines
-    svg.selectAll("myPath")
+    let linesPP = svg.selectAll("myPath")
       .data(slicedParticipants)
       .join("path")
       .attr("d", pathDrawer)
@@ -160,21 +160,140 @@ window.app = (new class {
       .style("stroke", "#69b3a2")
       .style("opacity", 0.5)
 
-    // Draw the axis:
-    svg.selectAll("myAxis")
+    // Draw the axes
+    let axesPP = svg.selectAll("myAxis")
       // For each dimension of the dataset I add a 'g' element:
       .data(dimensions).enter()
       .append("g")
-      // I translate this element to its right position on the x axis
+      // I translate this axis element to its correct position on the x axis
       .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
       // And I build the axis with the call function
-      .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
+      .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); }) // this refers to the g tag
       // Add axis title
-      .append("text")
-      .style("text-anchor", "middle")
-      .attr("y", -9)
-      .text(function (d) { return d; })
-      .style("fill", "black")
+      .call(g => g.append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -10)
+        .text(d => d)
+        .style("fill", "black"))
+
+    // Create the brush behavior.
+    const brushWidth = 50;
+    const brush = d3.brushY()
+      .extent([
+        [-(brushWidth / 2), 0],
+        [brushWidth / 2, heightPP]
+      ])
+      .on("start brush end", brushed);
+
+    axesPP.call(brush);
+
+    const selections = new Map();
+    function brushed({ selection }, key) {
+      if (selection === null) selections.delete(key); // if reset selection, remove key from map
+      else {
+        if (linearDimensions.includes(key)) selections.set(key, selection.map(y[key].invert)); // put [max, min] values of that 'key' axis in map
+        else {
+          let includedInFiltering = y[key].domain().filter(x => selection[0] <= y[key](x) && y[key](x) <= selection[1]);
+          selections.set(key, includedInFiltering);
+        }
+      }
+      const selected = [];
+      linesPP.each(function (d) {
+        const active = Array.from(selections).every(function ([key, arr]) {
+          if (linearDimensions.includes(key)) return d[key] >= arr[1] && d[key] <= arr[0];
+          else return arr.includes(d[key]);
+        });
+        d3.select(this).style("stroke", active ? "#69b3a2" : "#ddd");
+        if (active) {
+          // d3.select(this).raise();
+          selected.push(d);
+        }
+      });
+      // svg.property("value", selected).dispatch("input");
+    }
+
+    // ################################################################################
+
+    // // Specify the chart’s dimensions.
+    // const width = 1500;
+    // const height = 220;
+    // const marginTop = 30;
+    // const marginRight = 10;
+    // const marginBottom = 10;
+    // const marginLeft = 30;
+
+    // let keys = ["householdSize", "age", "joviality", "engels"]
+
+    // // Create a vertical (*y*) scale for each key.
+    // const y = new Map(Array.from(keys, key => [key, d3.scaleLinear(d3.extent(slicedParticipants, d => d[key]), [height - marginBottom, marginTop])]));
+
+    // // Create the horizontal (*x*) scale.
+    // const x = d3.scalePoint(keys, [marginLeft, width - marginRight]);
+
+    // // Create the SVG container.
+    // const svg = d3.select(".footer")
+    //   .append("svg")
+    //   .attr("viewBox", [0, 0, width, height])
+    //   .attr("width", width)
+    //   .attr("height", height)
+    //   .attr("style", "max-width: 100%; height: auto;");
+
+    // // Append the lines.
+    // const line = d3.line()
+    //   .x(([key]) => x(key))
+    //   .y(([key, value]) => y.get(key)(value));
+
+    // const path = svg.append("g")
+    //   .attr("id", "pplot")
+    //   .attr("fill", "none")
+    //   .attr("stroke-width", 1.5)
+    //   .attr("stroke-opacity", 0.4)
+    //   .selectAll("path")
+    //   .data(slicedParticipants)
+    //   .join("path")
+    //   .attr("stroke", "#69b3a2")
+    //   .attr("d", d => line(d3.cross(keys, [d], (key, d) => [key, d[key]])));
+
+    // // Append the axis for each key.
+    // const axes = svg.append("g")
+    //   .selectAll("g")
+    //   .data(keys)
+    //   .join("g")
+    //   .attr("transform", d => `translate(${x(d)},0)`)
+    //   .each(function (d) { d3.select(this).call(d3.axisLeft(y.get(d))); })
+    //   .call(g => g.append("text")
+    //     .attr("y", marginTop - 10)
+    //     .attr("text-anchor", "start")
+    //     .attr("fill", "currentColor")
+    //     .text(d => d));
+
+    // // Create the brush behavior.
+    // const brushWidth = 50;
+    // const brush = d3.brushY()
+    //   .extent([
+    //     [-(brushWidth / 2), marginTop],
+    //     [brushWidth / 2, height - marginBottom]
+    //   ])
+    //   .on("start brush end", brushed);
+
+    // axes.call(brush);
+
+    // const selections = new Map();
+
+    // function brushed({ selection }, key) {
+    //   if (selection === null) selections.delete(key); // if reset selection, remove key from map
+    //   else selections.set(key, selection.map(y.get(key).invert));
+    //   const selected = [];
+    //   path.each(function (d) {
+    //     const active = Array.from(selections).every(([key, [max, min]]) => d[key] >= min && d[key] <= max);
+    //     d3.select(this).style("stroke", active ? "#69b3a2" : "#ddd");
+    //     if (active) {
+    //       // d3.select(this).raise();
+    //       selected.push(d);
+    //     }
+    //   });
+    //   // svg.property("value", selected).dispatch("input");
+    // }
 
   }
 }())
