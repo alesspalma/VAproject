@@ -110,10 +110,10 @@ window.app = (new class {
     // const scale = 0.095
 
     const svg1 = mainContainer.append('svg')
-      // .attr("width", "100%")
-      // .attr("height", "100%")
-      // .append("g")
-      // .attr("transform", "translate(" + (-minX * scale) + "," + (maxY * scale) + ") scale(" + scale + ")")
+      // .attr('width', '100%')
+      // .attr('height', '100%')
+      // .append('g')
+      // .attr('transform', 'translate(' + (-minX * scale) + ',' + (maxY * scale) + ') scale(' + scale + ')')
       .attr('viewBox', [minX, maxY, width, height])
 
     // Create a projection that flips the Y axis.
@@ -155,26 +155,6 @@ window.app = (new class {
       svg1.attr('transform', transform.toString())
     }
 
-    // join the apartmentId from apartments with the apartmentId of the homes
-    this.homes.filter(d => ((!isNaN(d.apartmentId)) && (d.apartmentId !== 0))).forEach(d => {
-      const apartment = this.apartments.find(a => a.apartmentId === d.apartmentId)
-      d.location = { x: apartment.location.x, y: -apartment.location.y }
-    })
-
-    // const addresses = this.apartments.map(d => [d.location.x, -d.location.y])
-
-    // Draw where people live
-    const people = svg1.append('g')
-      .attr('fill', colors[6])
-      .attr('stroke', 'darkgrey')
-      .selectAll()
-      .data(this.homes.filter(d => d.location !== undefined))
-      .join('circle')
-      .attr('transform', d => `translate(${d.location.x},${d.location.y})`)
-      .attr('r', 15)
-
-    console.log(people)
-
     // Legend for the map
     const squareSize = 140
     const legendX = -4700
@@ -203,6 +183,39 @@ window.app = (new class {
       .style('alignment-baseline', 'middle')
       .attr('font-size', squareSize - legendPad)
     // end legend
+
+    // Create a tooltip SVG text element
+    // const tooltip = d3.select('body').append('div')
+    //   .attr('id', 'tooltip')
+    //   .attr('style', 'position: absolute; opacity: 0;')
+
+    // join the apartmentId from apartments with the apartmentId of the homes
+    this.homes.filter(d => ((!isNaN(d.apartmentId)) && (d.apartmentId !== 0))).forEach(d => {
+      const apartment = this.apartments.find(a => a.apartmentId === d.apartmentId)
+      d.location = { x: apartment.location.x, y: -apartment.location.y }
+    })
+
+    // Draw where people live
+    const people = svg1.append('g')
+      .attr('fill', colors[6])
+      .attr('stroke', 'darkgrey')
+      .selectAll()
+      .data(this.homes.filter(d => d.location !== undefined))
+      .join('circle')
+      .attr('transform', d => `translate(${d.location.x},${d.location.y})`)
+      .attr('r', 15)
+    // .on('mouseover', function (event, d) {
+    //   console.log(d)
+    //   d3.select('#tooltip').transition().duration(200).style('opacity', 1).text(d.participantId)
+    // })
+    // .on('mouseout', function () {
+    //   d3.select('#tooltip').style('opacity', 0)
+    // })
+    // .on('mousemove', function (event) {
+    //   d3.select('#tooltip').style('left', (event.pageX + 10) + 'px').style('top', (event.pageY + 10) + 'px')
+    // })
+
+    console.log(people)
 
     // HISTOGRAM
     // Aggregate financial for category summing the amount

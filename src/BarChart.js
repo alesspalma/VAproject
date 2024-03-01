@@ -51,7 +51,7 @@ export default class BarChart {
     this.yAxisContainer.call(d3.axisLeft(this.yScale).ticks(4))
     //
     this.bar = this.bounds.selectAll('rect')
-      .data(financialByCategory)
+      .data(d3.sort(financialByCategory, d => d[0]))
       .enter()
       .append('rect')
       .attr('x', d => this.xScale(d[0]))
@@ -87,7 +87,7 @@ export default class BarChart {
     this.xAxisContainer.call(d3.axisBottom(this.xScale))
     this.yAxisContainer.call(d3.axisLeft(this.yScale))
     this.bounds.selectAll('rect')
-      .data(financialByCategory)
+      .data(d3.sort(financialByCategory, d => d[0]))
       .join('rect')
       .transition()
       .duration(1000)
