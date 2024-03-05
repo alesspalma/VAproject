@@ -10,7 +10,8 @@ import countBySectors from '../countBySectors.json'
 import build from '../buildings_mod.json'
 import * as topojson from 'topojson-client'
 import BarChart from './BarChart'
-
+import PCAChart from './PCAChart'
+import pca from '../PCA.csv'
 
 window.app = (new class {
   constructor() {
@@ -21,6 +22,7 @@ window.app = (new class {
     this.apartments = []
     this.financials = []
     this.homes = []
+    this.pca_data = []
   }
 
   async init() {
@@ -68,6 +70,14 @@ window.app = (new class {
     })).filter(d => d.category !== 'Wage')
 
     console.log(this.financials)
+
+    this.pca_data = pca.slice(1).map(row => ({
+      participantId: +row[0],
+      x: +row[1],
+      y: +row[2],
+      z: +row[3]
+    }))
+
     console.log('init done!')
 
     // Call function to create visualization
@@ -223,6 +233,22 @@ window.app = (new class {
 
     const bc = new BarChart()
     bc.initChart(d3.select('.right'), financialByCategory)
+
+    // PCA Chart
+    const chart = new PCAChart(d3.select('.right'), this.pca_data)
+
+    // Example of how to update the data (replace with new PCA data if recomputing)
+    // setTimeout(() => {
+    //   const newData = [
+    //     { x: 2, y: 3 },
+    //     { x: 3, y: 4 },
+    //     { x: 4, y: 5 },
+    //     { x: 5, y: 6 },
+    //     { x: 6, y: 7 },
+    //     { x: -3, y: -4 }
+    //   ]
+    //   chart.updateChart(newData)
+    // }, 2000) // Change data after 2 seconds (for demonstration)
 
     // Create the brush behavior.
     svg1.call(d3.brush().on('end', ({ selection }) => {
