@@ -69,6 +69,15 @@ export default class PCAChart {
       .attr('cy', d => this.yScale(d.y))
       .attr('r', 5)
       .attr('fill', 'steelblue')
+      .on('mouseover', function (event, d) {
+        d3.select('#tooltip').style('opacity', 1).text(d.participantId)
+      })
+      .on('mouseout', function () {
+        d3.select('#tooltip').style('opacity', 0)
+      })
+      .on('mousemove', function (event) {
+        d3.select('#tooltip').style('left', (event.pageX + 10) + 'px').style('top', (event.pageY - 15) + 'px')
+      })
 
     circles.transition()
       .attr('cx', d => this.xScale(d.x))

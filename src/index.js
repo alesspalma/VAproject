@@ -195,9 +195,9 @@ window.app = (new class {
     // end legend
 
     // Create a tooltip SVG text element
-    // const tooltip = d3.select('body').append('div')
-    //   .attr('id', 'tooltip')
-    //   .attr('style', 'position: absolute; opacity: 0;')
+    const tooltip = d3.select('body').append('div')
+      .attr('id', 'tooltip')
+      .attr('style', 'position: absolute; opacity: 0;')
 
     // join the apartmentId from apartments with the apartmentId of the homes
     this.homes.filter(d => ((!isNaN(d.apartmentId)) && (d.apartmentId !== 0))).forEach(d => {
@@ -235,20 +235,7 @@ window.app = (new class {
     bc.initChart(d3.select('.right'), financialByCategory)
 
     // PCA Chart
-    const chart = new PCAChart(d3.select('.right'), this.pca_data)
-
-    // Example of how to update the data (replace with new PCA data if recomputing)
-    // setTimeout(() => {
-    //   const newData = [
-    //     { x: 2, y: 3 },
-    //     { x: 3, y: 4 },
-    //     { x: 4, y: 5 },
-    //     { x: 5, y: 6 },
-    //     { x: 6, y: 7 },
-    //     { x: -3, y: -4 }
-    //   ]
-    //   chart.updateChart(newData)
-    // }, 2000) // Change data after 2 seconds (for demonstration)
+    const pcaChart = new PCAChart(d3.select('.right'), this.pca_data)
 
     // Create the brush behavior.
     svg1.call(d3.brush().on('end', ({ selection }) => {
@@ -262,11 +249,18 @@ window.app = (new class {
         // filter financials by participantId and aggregate by category summing the amount for the selected people
         financialByCategory = this.d3.rollup(this.financials.filter(p => value.data().map(d => d.participantId).includes(p.participantId)), v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
         console.log(financialByCategory)
-        bc.updateChart(financialByCategory)
+        // bc.updateChart(financialByCategory)
+        // pcaChart.updateChart(this.pca_data.filter(p => value.data().map(d => d.participantId).includes(p.participantId)))
+        setTimeout(() => {
+          financialByCategory = this.d3.rollup(this.financials.filter(p => value.data().map(d => d.participantId).includes(p.participantId)), v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
+          bc.updateChart(financialByCategory)
+          pcaChart.updateChart(this.pca_data.filter(p => value.data().map(d => d.participantId).includes(p.participantId)))
+        }, 200)
       } else {
         people.attr('fill', colors[6])
         financialByCategory = this.d3.rollup(this.financials, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
         bc.updateChart(financialByCategory)
+        pcaChart.updateChart(this.pca_data)
       }
 
       // Inform downstream cells that the selection has changed.
