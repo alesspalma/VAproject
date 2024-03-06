@@ -113,6 +113,17 @@ window.app = (new class {
 
     const mainContainer = this.d3.select('.left')
 
+    d3.select('#toggleButton').on('change', function () {
+      const checkbox = d3.select(this).node()
+      if (checkbox.checked) {
+        // do stuff for activities
+        console.log('Checked')
+      } else {
+        // do stuff for participant
+        console.log('Not checked')
+      }
+    })
+
     const zoom = d3.zoom().scaleExtent([1, 1 << 3]).extent([[0, 0], [width, height]]).translateExtent([[0, 0], [width, height]]).on('zoom', zoomed)
 
     const minX = -5000
