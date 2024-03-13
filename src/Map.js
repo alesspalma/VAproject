@@ -31,8 +31,8 @@ export default class Map {
 
         this.wrapper = sel.append('svg')
             .attr('class', 'map_wrapper')
-            // .attr('width', "100%") // with this.dimensions it gets buggy
-            // .attr('height', "100%")
+            // .attr('width', this.dimensions.width)
+            // .attr('height', this.dimensions.height)
             // .append('g')
             // .attr('transform', `translate(${this.dimensions.margin.left + (-this.minX * this.scaleConstant)}, 
             //                         ${this.dimensions.margin.top + (this.maxY * this.scaleConstant)}) scale(${this.scaleConstant})`)

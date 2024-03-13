@@ -6,6 +6,7 @@ import droppedOut from '../data/Datasets/Attributes/DroppedOut.csv'
 import './styles/index.scss'
 import ParallelPlot from './ParallelPlot.js';
 import Map from './Map.js';
+import HistogramExpenses from './HistogramExpenses.js';
 
 window.app = (new class {
 
@@ -16,7 +17,7 @@ window.app = (new class {
 
   async init() {
 
-    // await someFunctionThatLoadData
+    // TODO: Implement data cleaning functions in utils.js and here just call them before initializing charts
     let slicedBuildings = buildings.slice(1).map(d => (
       {
         buildingId: +d[0],
@@ -70,16 +71,24 @@ window.app = (new class {
           engels: +d[7],
           apartmentId: +d[8],
           locationX: +d[9],
-          locationY: +d[10]
+          locationY: +d[10],
+          educationExpense: +d[11],
+          foodExpense: +d[12],
+          recreationExpense: +d[13],
+          shelterExpense: +d[14],
+          wage: +d[15],
+          rentAdjustment: +d[16]
         }
       ))
 
-    // #############################################################################################
+    // Now that data is ready, initialize the charts
 
     const map = new Map();
     map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants);
     const pp = new ParallelPlot();
     pp.initChart(d3.select(".footer"), slicedParticipants);
+    const hist = new HistogramExpenses();
+    hist.initChart(d3.select(".center"), slicedParticipants);
 
 
     d3.select('#toggleButton').on('change', function () {

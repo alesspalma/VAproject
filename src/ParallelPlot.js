@@ -7,7 +7,7 @@ export default class ParallelPlot {
       margin: {
         top: 30,
         right: 10,
-        bottom: 10,
+        bottom: 15,
         left: 10
       }
     }
@@ -93,7 +93,7 @@ export default class ParallelPlot {
         [-(brushWidth / 2), 0],
         [brushWidth / 2, this.dimensions.boundedHeight]
       ])
-      .on("start brush end", brushed);
+      .on("end", brushed);
 
     axesPP.call(brush);
 
