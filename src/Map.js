@@ -115,15 +115,19 @@ export default class Map {
         d3.select(".participants_wrapper").call(d3.brush().on('end', ({ selection }) => {
             if (selection) {
                 const [[x0, y0], [x1, y1]] = selection
-                participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
-                    .filter(d => x0 <= d.locationX && d.locationX <= x1 && y0 <= -d.locationY && -d.locationY <= y1)
-                    .attr('fill', CONSTANTS.ACTIVE_COLOR)
-            } else {
-                participants.attr('fill', CONSTANTS.ACTIVE_COLOR)
-            }
+                // participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
+                //     .filter(d => x0 <= d.locationX && d.locationX <= x1 && -y1 <= d.locationY && d.locationY <= -y0) // correct y range is [-y1, d.locationY, -y0] or [y0, -d.locationY, y1]
+                //     .attr('fill', CONSTANTS.ACTIVE_COLOR)
 
-            // Inform downstream cells that the selection has changed.
-            // this.wrapper.property('value', value).dispatch('input')
+
+                // Inform dispatcher that the selection has changed
+                CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: [x0, x1], locationY: [-y1, -y0] });
+            } else {
+                // participants.attr('fill', CONSTANTS.ACTIVE_COLOR)
+
+                // Inform dispatcher that the selection has changed
+                CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: null, locationY: null });
+            }
         }))
 
     }

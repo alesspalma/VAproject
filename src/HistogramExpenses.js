@@ -40,7 +40,6 @@ export default class HistogramExpenses {
             let sum = d3.sum(participantsData, d => d[key.toLowerCase() + 'Expense'])
             aggregatedData.set(key, sum)
         })
-        console.log(aggregatedData)
 
         // Scales
         this.xScale = d3.scaleBand()
@@ -65,6 +64,8 @@ export default class HistogramExpenses {
             .attr('width', this.xScale.bandwidth())
             .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
             .attr('fill', CONSTANTS.ACTIVE_COLOR)
+            .attr("stroke", "black")
+
 
     }
 }

@@ -1,5 +1,6 @@
 import 'normalize.css'
 import * as d3 from 'd3'
+import crossfilter from 'crossfilter2';
 import buildings from '../data/Datasets/Attributes/BuildingsAugmented.csv'
 import participants from '../data/Datasets/Attributes/ParticipantsAugmented.csv'
 import droppedOut from '../data/Datasets/Attributes/DroppedOut.csv'
@@ -7,6 +8,10 @@ import './styles/index.scss'
 import ParallelPlot from './ParallelPlot.js';
 import Map from './Map.js';
 import HistogramExpenses from './HistogramExpenses.js';
+import CONSTANTS from './constants.js';
+import PCAChart from './PCAChart.js';
+import performPCA from './utils.js'
+
 
 window.app = (new class {
 
@@ -56,9 +61,14 @@ window.app = (new class {
       };
     });
 
-    let listDroppedOut = droppedOut.slice(1).map(d => +d[0])
+    // Create a tooltip SVG text element
+    const tooltip = d3.select('body').append('div')
+      .attr('id', 'tooltip')
+      .attr('style', 'position: absolute; opacity: 0;')
 
-    let slicedParticipants = participants.slice(1).filter(d => (!listDroppedOut.includes(+d[0])) && d[8] !== "") // filter dropped out and participants without valid house
+    // let listDroppedOut = droppedOut.slice(1).map(d => +d[0])
+
+    let slicedParticipants = participants.slice(1) //.filter(d => (!listDroppedOut.includes(+d[0])) && d[8] !== "") // filter dropped out and participants without valid house
       .map(d => (
         {
           participantId: +d[0],
@@ -81,6 +91,17 @@ window.app = (new class {
         }
       ))
 
+    let crossfilterParticipants = crossfilter(slicedParticipants)
+    let idDimension = crossfilterParticipants.dimension(d => d.participantId)
+    let foodDimension = crossfilterParticipants.dimension(d => d.foodExpense)
+
+    idDimension.filter([0, 500])
+    foodDimension.filter([0, 4000])
+    console.log(crossfilterParticipants.allFiltered())
+    idDimension.filter()
+    console.log(crossfilterParticipants.allFiltered())
+    console.log(crossfilterParticipants.all())
+
     // Now that data is ready, initialize the charts
 
     const map = new Map();
@@ -89,6 +110,28 @@ window.app = (new class {
     pp.initChart(d3.select(".footer"), slicedParticipants);
     const hist = new HistogramExpenses();
     hist.initChart(d3.select(".center"), slicedParticipants);
+
+    // Add an event listener for the custom event dispatcher
+    CONSTANTS.DISPATCHER.on('userSelection', function (event) {
+      console.log('Custom event handled:', event);
+    });
+
+    const future_filtered_ids = [];
+    let pcaData;
+    const pcaPromise = performPCA(future_filtered_ids);
+    await pcaPromise.then(transformedData => {
+      // console.log('Transformed data in index.js:', transformedData);
+      pcaData = transformedData.map(row => ({
+        participantId: +row[0],
+        x: +row[1],
+        y: +row[2],
+        z: +row[3],
+        c: +row[transformedData[0].length - 1]
+      }));
+
+    });
+
+    const pcaChart = new PCAChart(d3.select('.right'), pcaData)
 
 
     d3.select('#toggleButton').on('change', function () {
@@ -101,6 +144,7 @@ window.app = (new class {
         console.log('Participants view')
       }
     })
+
   }
 }())
 
