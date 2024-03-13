@@ -124,7 +124,7 @@ window.app = (new class {
       }
     })
 
-    const zoom = d3.zoom().scaleExtent([1, 1 << 3]).extent([[0, 0], [width, height]]).translateExtent([[0, 0], [width, height]]).on('zoom', zoomed)
+    // const zoom = d3.zoom().scaleExtent([1, 1 << 3]).extent([[0, 0], [width, height]]).translateExtent([[0, 0], [width, height]]).on('zoom', zoomed)
 
     const minX = -5000
     const maxY = -8000
@@ -169,12 +169,12 @@ window.app = (new class {
       .attr('d', path)
 
     // zooming stuff
-    mainContainer.call(zoom)
-    function zoomed(event) {
-      const { transform } = event
-      // apply calculated transform to the image
-      svg1.attr('transform', transform.toString())
-    }
+    // mainContainer.call(zoom)
+    // function zoomed(event) {
+    //   const { transform } = event
+    //   // apply calculated transform to the image
+    //   svg1.attr('transform', transform.toString())
+    // }
 
     // Legend for the map
     const squareSize = 140
@@ -248,6 +248,23 @@ window.app = (new class {
     // PCA Chart
     const pcaChart = new PCAChart(d3.select('.right'), this.pca_data)
 
+    const numberFormatter = new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+
+    // add a text on the top right of the map to show the economic value of all the people that is a sum of all amount of the financials
+    const evStat = svg1.append('text')
+      .attr('x', 600)
+      .attr('y', -7750)
+      .attr('text-anchor', 'right')
+      .style('fill', 'black')
+      .style('alignment-baseline', 'middle')
+      .attr('font-size', 140)
+
+    evStat.text('Economic value: ' + numberFormatter.format(this.financials.reduce((acc, d) => acc + Math.abs(d.amount), 0)) + ' $')
+
     // Create the brush behavior.
     svg1.call(d3.brush().on('end', ({ selection }) => {
       let value = []
@@ -258,18 +275,21 @@ window.app = (new class {
           .filter(d => x0 <= d.location.x && d.location.x <= x1 && y0 <= d.location.y && d.location.y <= y1)
           .attr('fill', colors[5])
         // filter financials by participantId and aggregate by category summing the amount for the selected people
-        financialByCategory = this.d3.rollup(this.financials.filter(p => value.data().map(d => d.participantId).includes(p.participantId)), v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
+        const filteredParticipants = this.financials.filter(p => value.data().map(d => d.participantId).includes(p.participantId))
+        financialByCategory = this.d3.rollup(filteredParticipants, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
         console.log(financialByCategory)
+        evStat.text('Economic value: ' + numberFormatter.format(filteredParticipants.reduce((acc, d) => acc + Math.abs(d.amount), 0)) + ' $')
         // bc.updateChart(financialByCategory)
         // pcaChart.updateChart(this.pca_data.filter(p => value.data().map(d => d.participantId).includes(p.participantId)))
         setTimeout(() => {
-          financialByCategory = this.d3.rollup(this.financials.filter(p => value.data().map(d => d.participantId).includes(p.participantId)), v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
+          financialByCategory = this.d3.rollup(filteredParticipants, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
           bc.updateChart(financialByCategory)
           pcaChart.updateChart(this.pca_data.filter(p => value.data().map(d => d.participantId).includes(p.participantId)))
         }, 200)
       } else {
         people.attr('fill', colors[6])
         financialByCategory = this.d3.rollup(this.financials, v => this.d3.sum(v, d => Math.abs(d.amount)), d => d.category)
+        evStat.text('Economic value: ' + numberFormatter.format(this.financials.reduce((acc, d) => acc + Math.abs(d.amount), 0)) + ' $')
         bc.updateChart(financialByCategory)
         pcaChart.updateChart(this.pca_data)
       }
