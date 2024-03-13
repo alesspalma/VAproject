@@ -6,7 +6,7 @@ import participants from '../data/Datasets/Attributes/ParticipantsAugmented.csv'
 import droppedOut from '../data/Datasets/Attributes/DroppedOut.csv'
 import './styles/index.scss'
 import ParallelPlot from './ParallelPlot.js';
-import Map from './Map.js';
+import MapPlot from './MapPlot.js';
 import HistogramExpenses from './HistogramExpenses.js';
 import CONSTANTS from './constants.js';
 import PCAChart from './PCAChart.js';
@@ -18,6 +18,7 @@ window.app = (new class {
   constructor() {
     this.d3 = d3
     this.data = {}
+    this.filters = new Map()
   }
 
   async init() {
@@ -104,7 +105,7 @@ window.app = (new class {
 
     // Now that data is ready, initialize the charts
 
-    const map = new Map();
+    const map = new MapPlot();
     map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants);
     const pp = new ParallelPlot();
     pp.initChart(d3.select(".footer"), slicedParticipants);
@@ -112,8 +113,14 @@ window.app = (new class {
     hist.initChart(d3.select(".center"), slicedParticipants);
 
     // Add an event listener for the custom event dispatcher
+    let that = this;
     CONSTANTS.DISPATCHER.on('userSelection', function (event) {
-      console.log('Custom event handled:', event);
+      // iterate over event and update filters
+      for (let key in event) {
+        if (event[key] === null) delete that.filters[key];
+        else that.filters[key] = event[key];
+      }
+      console.log('actual filters:', that.filters);
     });
 
     const future_filtered_ids = [];

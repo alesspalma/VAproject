@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import CONSTANTS from './constants.js';
 
-export default class Map {
+export default class MapPlot {
     constructor() {
         this.dimensions = {
             margin: {
