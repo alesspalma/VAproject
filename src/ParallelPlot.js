@@ -1,4 +1,5 @@
 import * as d3 from 'd3'
+import CONSTANTS from './constants.js';
 
 export default class ParallelPlot {
   constructor() {
@@ -65,18 +66,19 @@ export default class ParallelPlot {
       .join("path")
       .attr("d", pathDrawer)
       .style("fill", "none")
-      .style("stroke", "#69b3a2")
-      .style("opacity", 0.5)
+      .style("stroke", CONSTANTS.ACTIVE_COLOR)
+      .style("opacity", 0.6)
 
     // Draw the axes
     let axesPP = this.wrapper.selectAll("myAxis")
       // For each dimension of the dataset I add a 'g' element:
-      .data(dimensions).enter()
+      .data(dimensions)
+      .enter()
       .append("g")
       // I translate this axis element to its correct position on the x axis
       .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
       // And I build the axis with the call function
-      .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); }) // this refers to the g tag
+      .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); }) // "this" refers to the g tag
       // Add axis title
       .call(g => g.append("text")
         .style("text-anchor", "middle")
@@ -111,7 +113,7 @@ export default class ParallelPlot {
           if (linearDimensions.includes(key)) return d[key] >= arr[1] && d[key] <= arr[0];
           else return arr.includes(d[key]);
         });
-        d3.select(this).style("stroke", active ? "#69b3a2" : "#ddd");
+        d3.select(this).style("stroke", active ? CONSTANTS.ACTIVE_COLOR : CONSTANTS.INACTIVE_COLOR);
         if (active) {
           d3.select(this).raise();
           selected.push(d);

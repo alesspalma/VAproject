@@ -34,7 +34,8 @@
   },
   "dependencies": {
     "d3": "^7.8.5",
-    "normalize.css": "^8.0.1"
+    "normalize.css": "^8.0.1",
+    "crossfilter2": "^1.5.4"
   },
   "browserslist": [
     "last 2 versions",
