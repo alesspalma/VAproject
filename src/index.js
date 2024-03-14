@@ -18,7 +18,7 @@ window.app = (new class {
   constructor() {
     this.d3 = d3
     this.data = {}
-    this.filters = new Map()
+    this.filters = new Map() // it will be a map like { 'age': [min, max], 'educationLevel': ['Low', 'HighSchoolOrCollege', 'Bachelors'], ... }
   }
 
   async init() {
@@ -92,17 +92,6 @@ window.app = (new class {
         }
       ))
 
-    let crossfilterParticipants = crossfilter(slicedParticipants)
-    let idDimension = crossfilterParticipants.dimension(d => d.participantId)
-    let foodDimension = crossfilterParticipants.dimension(d => d.foodExpense)
-
-    idDimension.filter([0, 500])
-    foodDimension.filter([0, 4000])
-    console.log(crossfilterParticipants.allFiltered())
-    idDimension.filter()
-    console.log(crossfilterParticipants.allFiltered())
-    console.log(crossfilterParticipants.all())
-
     // Now that data is ready, initialize the charts
 
     const map = new MapPlot();
@@ -117,10 +106,26 @@ window.app = (new class {
     CONSTANTS.DISPATCHER.on('userSelection', function (event) {
       // iterate over event and update filters
       for (let key in event) {
-        if (event[key] === null) delete that.filters[key];
-        else that.filters[key] = event[key];
+        if (event[key] === null) that.filters.delete(key);
+        else that.filters.set(key, event[key])
       }
       console.log('actual filters:', that.filters);
+
+      // filter data
+      let crossfilterParticipants = crossfilter(slicedParticipants)
+
+      that.filters.forEach((value, key) => {
+        if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter(value)
+        else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+      })
+
+      console.log(crossfilterParticipants.allFiltered())
+      console.log(crossfilterParticipants.allFiltered().length)
+
+      // update charts
+      // pp.updateChart(crossfilterParticipants.allFiltered())
+      // hist.updateChart(crossfilterParticipants.allFiltered())
+      // map.updateChart(crossfilterParticipants.allFiltered())
     });
 
     const future_filtered_ids = [];

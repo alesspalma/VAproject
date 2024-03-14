@@ -97,29 +97,37 @@ export default class ParallelPlot {
 
     axesPP.call(brush);
 
-    const selections = new Map();
+    // const selections = new Map();
     function brushed({ selection }, key) {
-      if (selection === null) selections.delete(key); // if reset selection, remove key from map
+      if (selection === null) {
+        // selections.delete(key); // if reset selection, remove key from map
+        CONSTANTS.DISPATCHER.call('userSelection', null, { [key]: null });
+      }
       else {
-        if (linearDimensions.includes(key)) selections.set(key, selection.map(y[key].invert)); // put [max, min] values of that 'key' axis in map
+        if (linearDimensions.includes(key)) {
+          let min = y[key].invert(selection[1]);
+          let max = y[key].invert(selection[0]);
+          // selections.set(key, [max, min]); // put [max, min] values of that 'key' axis in map
+          CONSTANTS.DISPATCHER.call('userSelection', null, { [key]: [min, max] });
+        }
         else {
           let includedInFiltering = y[key].domain().filter(x => selection[0] <= y[key](x) && y[key](x) <= selection[1]);
-          selections.set(key, includedInFiltering); // put all brushed categorical values of that 'key' axis in map
+          // selections.set(key, includedInFiltering); // put all brushed categorical values of that 'key' axis in map
+          CONSTANTS.DISPATCHER.call('userSelection', null, { [key]: includedInFiltering });
         }
       }
-      const selected = [];
-      linesPP.each(function (d) {
-        const active = Array.from(selections).every(function ([key, arr]) {
-          if (linearDimensions.includes(key)) return d[key] >= arr[1] && d[key] <= arr[0];
-          else return arr.includes(d[key]);
-        });
-        d3.select(this).style("stroke", active ? CONSTANTS.ACTIVE_COLOR : CONSTANTS.INACTIVE_COLOR);
-        if (active) {
-          d3.select(this).raise();
-          selected.push(d);
-        }
-      });
-      // svg.property("value", selected).dispatch("input");
+      // const selected = [];
+      // linesPP.each(function (d) {
+      //   const active = Array.from(selections).every(function ([key, arr]) {
+      //     if (linearDimensions.includes(key)) return d[key] >= arr[1] && d[key] <= arr[0];
+      //     else return arr.includes(d[key]);
+      //   });
+      //   d3.select(this).style("stroke", active ? CONSTANTS.ACTIVE_COLOR : CONSTANTS.INACTIVE_COLOR);
+      //   if (active) {
+      //     d3.select(this).raise();
+      //     selected.push(d);
+      //   }
+      // })
     }
   }
 }
