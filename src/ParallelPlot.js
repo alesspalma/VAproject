@@ -29,7 +29,7 @@ export default class ParallelPlot {
       .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
     // Extract the list of dimensions we want to keep in the plot
-    let linearDimensions = ["householdSize", "age", "joviality", "engels"]
+    let linearDimensions = ["age", "joviality", "engels", "householdSize"]
     let categoricalDimensions = ["haveKids", "interestGroup", "educationLevel"]
     let dimensions = linearDimensions.concat(categoricalDimensions)
 
@@ -60,7 +60,7 @@ export default class ParallelPlot {
     }
 
     // Draw the lines
-    let linesPP = this.wrapper.append("g")
+    this.linesPP = this.wrapper.append("g")
       .selectAll("myPath")
       .data(data)
       .join("path")
@@ -97,37 +97,28 @@ export default class ParallelPlot {
 
     axesPP.call(brush);
 
-    // const selections = new Map();
     function brushed({ selection }, key) {
       if (selection === null) {
-        // selections.delete(key); // if reset selection, remove key from map
         CONSTANTS.DISPATCHER.call('userSelection', null, { [key]: null });
       }
       else {
         if (linearDimensions.includes(key)) {
           let min = y[key].invert(selection[1]);
           let max = y[key].invert(selection[0]);
-          // selections.set(key, [max, min]); // put [max, min] values of that 'key' axis in map
           CONSTANTS.DISPATCHER.call('userSelection', null, { [key]: [min, max] });
         }
         else {
           let includedInFiltering = y[key].domain().filter(x => selection[0] <= y[key](x) && y[key](x) <= selection[1]);
-          // selections.set(key, includedInFiltering); // put all brushed categorical values of that 'key' axis in map
           CONSTANTS.DISPATCHER.call('userSelection', null, { [key]: includedInFiltering });
         }
       }
-      // const selected = [];
-      // linesPP.each(function (d) {
-      //   const active = Array.from(selections).every(function ([key, arr]) {
-      //     if (linearDimensions.includes(key)) return d[key] >= arr[1] && d[key] <= arr[0];
-      //     else return arr.includes(d[key]);
-      //   });
-      //   d3.select(this).style("stroke", active ? CONSTANTS.ACTIVE_COLOR : CONSTANTS.INACTIVE_COLOR);
-      //   if (active) {
-      //     d3.select(this).raise();
-      //     selected.push(d);
-      //   }
-      // })
     }
+  }
+
+  updateChart(participantIds) {
+    this.linesPP.style("stroke", CONSTANTS.INACTIVE_COLOR)
+      .filter(d => participantIds.includes(d.participantId))
+      .style("stroke", CONSTANTS.ACTIVE_COLOR)
+      .raise()
   }
 }

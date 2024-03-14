@@ -10,7 +10,7 @@ import MapPlot from './MapPlot.js';
 import HistogramExpenses from './HistogramExpenses.js';
 import CONSTANTS from './constants.js';
 import PCAChart from './PCAChart.js';
-import performPCA from './utils.js'
+import BoxPlot from './BoxPlot.js'
 
 
 window.app = (new class {
@@ -65,7 +65,8 @@ window.app = (new class {
     // Create a tooltip SVG text element
     const tooltip = d3.select('body').append('div')
       .attr('id', 'tooltip')
-      .attr('style', 'position: absolute; opacity: 0;')
+      .attr('style', 'position: absolute; opacity: 0; box-sizing: border-box; top: 0; left: -100000000px; padding: 4px 4px; font-family: sans-serif; font-size: 12px; color: #333; background-color: #eee; border: 1px solid #333; border-radius: 4px; pointer-events: none; z-index: 1;');
+
 
     // let listDroppedOut = droppedOut.slice(1).map(d => +d[0])
 
@@ -99,7 +100,11 @@ window.app = (new class {
     const pp = new ParallelPlot();
     pp.initChart(d3.select(".footer"), slicedParticipants);
     const hist = new HistogramExpenses();
-    hist.initChart(d3.select(".center"), slicedParticipants);
+    hist.initChart(d3.select(".center").select(".top"), slicedParticipants);
+    const bp = new BoxPlot();
+    bp.initChart(d3.select(".center").select(".down"), slicedParticipants);
+    const pca = new PCAChart()
+    pca.initChart(d3.select('.right'), slicedParticipants)
 
     // Add an event listener for the custom event dispatcher
     let that = this;
@@ -109,42 +114,28 @@ window.app = (new class {
         if (event[key] === null) that.filters.delete(key);
         else that.filters.set(key, event[key])
       }
-      console.log('actual filters:', that.filters);
+      // console.log(event)
+      // console.log('actual filters:', that.filters);
 
       // filter data
       let crossfilterParticipants = crossfilter(slicedParticipants)
 
       that.filters.forEach((value, key) => {
-        if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter(value)
+        if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
         else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
       })
 
-      console.log(crossfilterParticipants.allFiltered())
       console.log(crossfilterParticipants.allFiltered().length)
 
       // update charts
-      // pp.updateChart(crossfilterParticipants.allFiltered())
-      // hist.updateChart(crossfilterParticipants.allFiltered())
-      // map.updateChart(crossfilterParticipants.allFiltered())
+      let newSelected = crossfilterParticipants.allFiltered()
+      let newIds = newSelected.map(d => d.participantId)
+      map.updateChart(newIds)
+      pp.updateChart(newIds)
+      hist.updateChart(newSelected)
+      if (!that.filters.has("participantId")) pca.updateChart(newIds)
     });
-
-    const future_filtered_ids = [];
-    let pcaData;
-    const pcaPromise = performPCA(future_filtered_ids);
-    await pcaPromise.then(transformedData => {
-      // console.log('Transformed data in index.js:', transformedData);
-      pcaData = transformedData.map(row => ({
-        participantId: +row[0],
-        x: +row[1],
-        y: +row[2],
-        z: +row[3],
-        c: +row[transformedData[0].length - 1]
-      }));
-
-    });
-
-    const pcaChart = new PCAChart(d3.select('.right'), pcaData)
-
 
     d3.select('#toggleButton').on('change', function () {
       const checkbox = d3.select(this).node()

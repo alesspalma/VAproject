@@ -45,11 +45,9 @@ export default class MapPlot {
         //     .attr("transform", "translate(" + (-this.minX * this.scaleConstant) + "," + (this.maxY * this.scaleConstant) + ") scale(" + this.scaleConstant + ")");
 
         // Create a color scale for the building types
-        const buildingTypes = ['Residential', 'Commercial', 'Pub', 'Restaurant', 'School']
-        const colors = ['rgb(255,255,153)', 'rgb(56,108,176)', 'rgb(191,91,23)', 'rgb(190,174,212)', 'rgb(253,192,134)']
         const colorScale = d3.scaleOrdinal()
-            .domain(buildingTypes)
-            .range(colors)
+            .domain(CONSTANTS.BUILDING_TYPES)
+            .range(CONSTANTS.BUILDINGS_COLORS)
 
         // Define a projection (assuming the data is in a projected coordinate system) and the path generator
         const projection = d3.geoIdentity().reflectY(true);
@@ -62,7 +60,7 @@ export default class MapPlot {
             .data(buildingsData)
             .enter()
             .append("path")
-            .attr("d", d => pathMap(d.location)) // .attr("d", d => pathMap({ "type": d.location.type, "coordinates": d.location.coordinates }))
+            .attr("d", d => pathMap(d.location))
             .attr("stroke", "black")
             .attr("stroke-width", 5)
             .attr("fill", d => colorScale(d.buildingType))
@@ -73,7 +71,7 @@ export default class MapPlot {
 
         let legendWrapper = this.wrapper.append('g').attr('class', 'legend_wrapper')
         legendWrapper.selectAll('.legend_square')
-            .data(buildingTypes)
+            .data(CONSTANTS.BUILDING_TYPES)
             .enter()
             .append('rect')
             .attr('class', 'legend_square')
@@ -85,8 +83,17 @@ export default class MapPlot {
             .attr('stroke', 'black')
             .attr('stroke-width', 5)
 
+        legendWrapper.append('circle')
+            .attr('class', 'legend_circle')
+            .attr('cx', this.minX + this.legendSquareSize / 2)
+            .attr('cy', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+            .attr('r', (this.legendSquareSize / 2) - 5)
+            .attr('fill', CONSTANTS.ACTIVE_COLOR)
+            .attr('stroke', 'black')
+            .attr('stroke-width', 5)
+
         legendWrapper.selectAll('.legend_labels')
-            .data(buildingTypes)
+            .data(CONSTANTS.BUILDING_TYPES)
             .enter()
             .append('text')
             .attr('class', 'legend_labels')
@@ -97,8 +104,17 @@ export default class MapPlot {
             .attr("dominant-baseline", "central")
             .attr('font-size', this.legendFontSize)
 
+        legendWrapper.append('text')
+            .attr('class', 'legend_labels')
+            .attr('x', this.minX + this.legendSquareSize * 1.3)
+            .attr('y', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+            .attr('fill', 'black')
+            .text('Participant')
+            .attr("dominant-baseline", "central")
+            .attr('font-size', this.legendFontSize)
+
         // Draw the participants
-        let participants = this.wrapper.append("g")
+        this.participants = this.wrapper.append("g")
             .attr("class", "participants_wrapper")
             .selectAll("circle")
             .data(participantsData)
@@ -115,20 +131,24 @@ export default class MapPlot {
         d3.select(".participants_wrapper").call(d3.brush().on('end', ({ selection }) => {
             if (selection) {
                 const [[x0, y0], [x1, y1]] = selection
-                // participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
-                //     .filter(d => x0 <= d.locationX && d.locationX <= x1 && -y1 <= d.locationY && d.locationY <= -y0) // correct y range is [-y1, d.locationY, -y0] or [y0, -d.locationY, y1]
-                //     .attr('fill', CONSTANTS.ACTIVE_COLOR)
-
-
                 // Inform dispatcher that the selection has changed
                 CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: [x0, x1], locationY: [-y1, -y0] });
             } else {
-                // participants.attr('fill', CONSTANTS.ACTIVE_COLOR)
-
                 // Inform dispatcher that the selection has changed
                 CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: null, locationY: null });
             }
         }))
 
+    }
+
+    updateChart(participantIds) {
+        this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
+            .filter(d => participantIds.includes(d.participantId))
+            .attr('fill', CONSTANTS.ACTIVE_COLOR)
+            .raise()
+            .attr('r', 120)
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr('r', 40)
     }
 }

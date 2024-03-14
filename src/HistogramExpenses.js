@@ -11,6 +11,7 @@ export default class HistogramExpenses {
                 left: 60
             }
         }
+        this.aggregatedData = new Map([['Education', 0], ['Food', 0], ['Recreation', 0], ['Shelter', 0]])
     }
 
     initChart(sel, participantsData) {
@@ -26,7 +27,7 @@ export default class HistogramExpenses {
             .attr('width', this.dimensions.width)
             .attr('height', this.dimensions.height)
 
-        this.bars = this.wrapper.append('g')
+        let bars_wrapper = this.wrapper.append('g')
             .attr('class', 'bars_wrapper')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
         this.xAxisContainer = this.wrapper.append('g')
@@ -35,19 +36,18 @@ export default class HistogramExpenses {
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
         // Aggregate the data for each expense category
-        let aggregatedData = new Map([['Education', 0], ['Food', 0], ['Recreation', 0], ['Shelter', 0]])
-        aggregatedData.forEach((value, key) => {
+        this.aggregatedData.forEach((value, key) => {
             let sum = d3.sum(participantsData, d => d[key.toLowerCase() + 'Expense'])
-            aggregatedData.set(key, sum)
+            this.aggregatedData.set(key, sum)
         })
 
         // Scales
         this.xScale = d3.scaleBand()
-            .domain(aggregatedData.keys())
+            .domain(this.aggregatedData.keys())
             .range([0, this.dimensions.boundedWidth])
             .padding(0.2)
         this.yScale = d3.scaleLinear()
-            .domain([0, d3.max(aggregatedData.values())])
+            .domain([0, d3.max(this.aggregatedData.values())])
             // .nice()
             .range([this.dimensions.boundedHeight, 0])
 
@@ -55,8 +55,8 @@ export default class HistogramExpenses {
         this.yAxisContainer.call(d3.axisLeft(this.yScale))
 
         // Draw the bars
-        this.bars.selectAll('rect')
-            .data(aggregatedData)
+        this.bars = bars_wrapper.selectAll('rect')
+            .data(this.aggregatedData)
             .enter()
             .append('rect')
             .attr('x', d => this.xScale(d[0]))
@@ -67,5 +67,24 @@ export default class HistogramExpenses {
             .attr("stroke", "black")
 
 
+    }
+
+    updateChart(participantsData) {
+        this.aggregatedData.forEach((value, key) => {
+            let sum = d3.sum(participantsData, d => d[key.toLowerCase() + 'Expense'])
+            this.aggregatedData.set(key, sum)
+        })
+
+        this.yScale.domain([0, d3.max(this.aggregatedData.values())])
+        this.yAxisContainer
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .call(d3.axisLeft(this.yScale))
+
+        this.bars.data(this.aggregatedData)
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr('y', d => this.yScale(d[1]))
+            .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
     }
 }

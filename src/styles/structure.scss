@@ -29,6 +29,18 @@ html {
 .center {
     flex: 1;
     background-color: #eee;
+    display: flex;
+    flex-direction: column;
+
+    .top {
+        flex: 1;
+        // Add styles for the top div here
+    }
+
+    .down {
+        flex: 1;
+        // Add styles for the down div here
+    }
 }
 
 .right {
@@ -68,7 +80,7 @@ html {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #7e7e7e;
+    background-color: #69b3a2;
     -webkit-transition: .4s;
     transition: .4s;
 }

@@ -49,7 +49,7 @@ def pca():
         }
         df.loc[:, "educationLevel"] = df["educationLevel"].apply(lambda x: value_map_d.get(x))
     #print(df)
-    print(df.shape)
+    #print(df.shape)
 
     d = df.values
 
