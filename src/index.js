@@ -11,6 +11,7 @@ import HistogramExpenses from './HistogramExpenses.js';
 import CONSTANTS from './constants.js';
 import PCAChart from './PCAChart.js';
 import BoxPlot from './BoxPlot.js'
+import ScatterPlot from './ScatterPlot.js';
 
 
 window.app = (new class {
@@ -101,8 +102,8 @@ window.app = (new class {
     pp.initChart(d3.select(".footer"), slicedParticipants);
     const hist = new HistogramExpenses();
     hist.initChart(d3.select(".center").select(".top"), slicedParticipants);
-    const bp = new BoxPlot();
-    bp.initChart(d3.select(".center").select(".down"), slicedParticipants);
+    const sc = new ScatterPlot();
+    sc.initChart(d3.select(".center").select(".down"), slicedParticipants);
     const pca = new PCAChart()
     pca.initChart(d3.select('.right'), slicedParticipants)
 
@@ -134,6 +135,7 @@ window.app = (new class {
       map.updateChart(newIds)
       pp.updateChart(newIds)
       hist.updateChart(newSelected)
+      sc.updateChart(newSelected)
       if (!that.filters.has("participantId")) pca.updateChart(newIds)
     });
 

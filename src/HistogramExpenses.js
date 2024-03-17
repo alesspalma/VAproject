@@ -46,8 +46,10 @@ export default class HistogramExpenses {
             .domain(this.aggregatedData.keys())
             .range([0, this.dimensions.boundedWidth])
             .padding(0.2)
+
+        const maxExpense = d3.max(this.aggregatedData.values())
         this.yScale = d3.scaleLinear()
-            .domain([0, d3.max(this.aggregatedData.values())])
+            .domain([0, maxExpense + 0.1 * maxExpense])
             // .nice()
             .range([this.dimensions.boundedHeight, 0])
 
@@ -65,6 +67,17 @@ export default class HistogramExpenses {
             .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
             .attr('fill', CONSTANTS.ACTIVE_COLOR)
             .attr("stroke", "black")
+
+        this.barsText = bars_wrapper.selectAll('.bar-value')
+            .data(this.aggregatedData)
+            .enter()
+            .append('text')
+            .attr('class', 'bar-value')
+            .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 2)
+            .attr('y', d => this.yScale(d[1]) - 5)
+            .attr('text-anchor', 'middle')
+            .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
+            .style('fill', 'black');
 
 
     }
@@ -86,5 +99,13 @@ export default class HistogramExpenses {
             .duration(CONSTANTS.TRANSITION_DURATION)
             .attr('y', d => this.yScale(d[1]))
             .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
+
+        // Update the text values and their positions
+        this.barsText.data(this.aggregatedData)
+            .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 2)
+            .attr('y', d => this.yScale(d[1]) - 5);
     }
 }
