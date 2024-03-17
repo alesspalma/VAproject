@@ -7,8 +7,8 @@ export default class ScatterPlot {
       margin: {
         top: 30,
         right: 30,
-        bottom: 30,
-        left: 60
+        bottom: 40,
+        left: 75
       }
     };
     this.data = [];
@@ -38,6 +38,28 @@ export default class ScatterPlot {
     this.yAxisContainer = this.wrapper.append('g')
       .attr('class', 'y-axis')
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+
+    // Draw the x-axis title
+    this.xAxisContainer.append('text')
+      .attr("text-anchor", "middle")
+      .attr('x', this.dimensions.boundedWidth / 2)
+      .attr('y', this.dimensions.margin.bottom - 5)
+      .attr("font-weight", 700)
+      .style("font-size", "16px")
+      .text('Joviality')
+      .attr('fill', 'black');
+
+    // Draw the y-axis title
+    this.yAxisContainer.append('text')
+      .attr('x', -this.dimensions.boundedHeight / 2)
+      .attr('y', -this.dimensions.margin.left + 20)
+      .attr('transform', 'rotate(-90)')
+      .attr('text-anchor', 'middle')
+      .attr("font-weight", 700)
+      .style("font-size", "16px")
+      .text('Wage')
+      .attr('fill', 'black');
 
     // Extract joviality and wage data
     this.data = participantsData.map(d => ({
