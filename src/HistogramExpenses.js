@@ -7,8 +7,8 @@ export default class HistogramExpenses {
             margin: {
                 top: 30,
                 right: 30,
-                bottom: 30,
-                left: 60
+                bottom: 40,
+                left: 80
             }
         }
         this.aggregatedData = new Map([['Education', 0], ['Food', 0], ['Recreation', 0], ['Shelter', 0]])
@@ -34,6 +34,27 @@ export default class HistogramExpenses {
             .attr('transform', `translate(${margin.left}, ${margin.top + this.dimensions.boundedHeight})`)
         this.yAxisContainer = this.wrapper.append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
+
+        // Draw the x-axis title
+        this.xAxisContainer.append('text')
+            .attr("text-anchor", "middle")
+            .attr('x', this.dimensions.boundedWidth / 2)
+            .attr('y', this.dimensions.margin.bottom - 5)
+            .attr("font-weight", 700)
+            .style("font-size", "16px")
+            .text('Expense Categories')
+            .attr('fill', 'black');
+
+        // Draw the y-axis title
+        this.yAxisContainer.append('text')
+            .attr('x', -this.dimensions.boundedHeight / 2)
+            .attr('y', -this.dimensions.margin.left + 20)
+            .attr('transform', 'rotate(-90)')
+            .attr('text-anchor', 'middle')
+            .attr("font-weight", 700)
+            .style("font-size", "16px")
+            .text('Total Expense')
+            .attr('fill', 'black');
 
         // Aggregate the data for each expense category
         this.aggregatedData.forEach((value, key) => {
@@ -61,9 +82,9 @@ export default class HistogramExpenses {
             .data(this.aggregatedData)
             .enter()
             .append('rect')
-            .attr('x', d => this.xScale(d[0]))
+            .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 4)
             .attr('y', d => this.yScale(d[1]))
-            .attr('width', this.xScale.bandwidth())
+            .attr('width', this.xScale.bandwidth() / 2)
             .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
             .attr('fill', CONSTANTS.ACTIVE_COLOR)
             .attr("stroke", "black")
