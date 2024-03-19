@@ -11,7 +11,6 @@ export default class ScatterPlot {
         left: 75
       }
     };
-    this.data = [];
   }
 
   initChart(sel, participantsData) {
@@ -58,23 +57,14 @@ export default class ScatterPlot {
       .attr('text-anchor', 'middle')
       .attr("font-weight", 700)
       .style("font-size", "16px")
-      .text('Wage')
+      .text('Wage ($)')
       .attr('fill', 'black');
 
-    // Extract joviality and wage data
-    this.data = participantsData.map(d => ({
-      id: d.participantId,
-      joviality: d.joviality,
-      wage: d.wage
-    }));
-
-    const [minJoviality, maxJoviality] = d3.extent(this.data, d => d.joviality);
-    const dataPaddingX = 0.01;
-    const [minWage, maxWage] = d3.extent(this.data, d => d.wage);
+    const [minWage, maxWage] = d3.extent(participantsData, d => d.wage);
     const dataPaddingY = 0.17 * minWage;
     // Scales
     this.xScale = d3.scaleLinear()
-      .domain([0 - dataPaddingX, maxJoviality + dataPaddingX])
+      .domain([0, 1])
       .range([0, this.dimensions.boundedWidth]);
 
     this.yScale = d3.scaleLinear()
@@ -86,7 +76,7 @@ export default class ScatterPlot {
 
     // Draw the circles
     this.circles = this.scatterWrapper.selectAll('circle')
-      .data(this.data)
+      .data(participantsData, d => d.participantId)
       .enter()
       .append('circle')
       .attr('cx', d => this.xScale(d.joviality))
@@ -95,7 +85,7 @@ export default class ScatterPlot {
       .attr('fill', CONSTANTS.ACTIVE_COLOR)
       .attr('stroke', 'black')
       .on('mouseover', function (event, d) {
-        d3.select('#tooltip').style('opacity', 1).html('ID: ' + d.id + '<br>Joviality: ' + CONSTANTS.NUMBER_FORMATTER.format(d.joviality) + '<br>Wage: ' + CONSTANTS.NUMBER_FORMATTER.format(d.wage));
+        d3.select('#tooltip').style('opacity', 1).html('ID: ' + d.participantId + '<br>Joviality: ' + CONSTANTS.NUMBER_FORMATTER.format(d.joviality) + '<br>Wage: ' + CONSTANTS.NUMBER_FORMATTER.format(d.wage));
       })
       .on('mouseout', function () {
         d3.select('#tooltip').style('opacity', 0);
@@ -110,45 +100,30 @@ export default class ScatterPlot {
 
 
   updateChart(participantsData) {
-    // Update data
-    this.data = participantsData.map(d => ({
-      id: d.participantId,
-      joviality: d.joviality,
-      wage: d.wage
-    }));
 
     // Update scales
-    const [minJoviality, maxJoviality] = d3.extent(this.data, d => d.joviality);
-    const dataPaddingX = 0.01;
-    const [minWage, maxWage] = d3.extent(this.data, d => d.wage);
+    const [minWage, maxWage] = d3.extent(participantsData, d => d.wage);
     const dataPaddingY = 0.17 * minWage;
-    // Scales
-    this.xScale.domain([0 - dataPaddingX, maxJoviality + dataPaddingX]);
 
+    // Scales
     this.yScale.domain([minWage - dataPaddingY, maxWage + dataPaddingY])
 
-    this.xAxisContainer
-      .transition()
-      .duration(CONSTANTS.TRANSITION_DURATION)
-      .call(d3.axisBottom(this.xScale))
     this.yAxisContainer
       .transition()
       .duration(CONSTANTS.TRANSITION_DURATION)
       .call(d3.axisLeft(this.yScale))
 
     // Update circles
-    let that = this;
     this.circles = this.scatterWrapper.selectAll('circle')
-      .data(this.data)
+      .data(participantsData, d => d.participantId)
       .join(
         enter => enter.append('circle')
           .attr('cx', d => this.xScale(d.joviality))
           .attr('cy', d => this.yScale(d.wage))
           .attr('fill', CONSTANTS.ACTIVE_COLOR)
           .attr('stroke', 'black')
-          .attr('r', 0)
           .on('mouseover', function (event, d) {
-            d3.select('#tooltip').style('opacity', 1).html('ID: ' + d.id + '<br>Joviality: ' + CONSTANTS.NUMBER_FORMATTER.format(d.joviality) + '<br>Wage: ' + CONSTANTS.NUMBER_FORMATTER.format(d.wage));
+            d3.select('#tooltip').style('opacity', 1).html('ID: ' + d.participantId + '<br>Joviality: ' + CONSTANTS.NUMBER_FORMATTER.format(d.joviality) + '<br>Wage: ' + CONSTANTS.NUMBER_FORMATTER.format(d.wage));
           })
           .on('mouseout', function () {
             d3.select('#tooltip').style('opacity', 0);
@@ -159,6 +134,7 @@ export default class ScatterPlot {
           .on('click', function (event, d) {
             // Your click event logic here
           })
+          .attr('r', 0)
           .transition()
           .duration(CONSTANTS.TRANSITION_DURATION)
           .attr('r', 5),

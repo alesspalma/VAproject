@@ -47,13 +47,13 @@ export default class HistogramExpenses {
 
         // Draw the y-axis title
         this.yAxisContainer.append('text')
-            .attr('x', -this.dimensions.boundedHeight / 2)
-            .attr('y', -this.dimensions.margin.left + 20)
+            .attr('x', -this.dimensions.boundedHeight / 2) // it actually sets the y position because of the rotation
+            .attr('y', -this.dimensions.margin.left + 20) // it actually sets the x position because of the rotation
             .attr('transform', 'rotate(-90)')
             .attr('text-anchor', 'middle')
             .attr("font-weight", 700)
             .style("font-size", "16px")
-            .text('Total Expense')
+            .text('Total Expense ($)')
             .attr('fill', 'black');
 
         // Aggregate the data for each expense category
@@ -66,12 +66,11 @@ export default class HistogramExpenses {
         this.xScale = d3.scaleBand()
             .domain(this.aggregatedData.keys())
             .range([0, this.dimensions.boundedWidth])
-            .padding(0.2)
+            .padding(0.4) // change padding value to make bars thinner or thicker
 
         const maxExpense = d3.max(this.aggregatedData.values())
         this.yScale = d3.scaleLinear()
             .domain([0, maxExpense + 0.1 * maxExpense])
-            // .nice()
             .range([this.dimensions.boundedHeight, 0])
 
         this.xAxisContainer.call(d3.axisBottom(this.xScale))
@@ -82,9 +81,9 @@ export default class HistogramExpenses {
             .data(this.aggregatedData)
             .enter()
             .append('rect')
-            .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 4)
+            .attr('x', d => this.xScale(d[0]))
             .attr('y', d => this.yScale(d[1]))
-            .attr('width', this.xScale.bandwidth() / 2)
+            .attr('width', this.xScale.bandwidth())
             .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
             .attr('fill', CONSTANTS.ACTIVE_COLOR)
             .attr("stroke", "black")
@@ -100,7 +99,6 @@ export default class HistogramExpenses {
             .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
             .style('fill', 'black');
 
-
     }
 
     updateChart(participantsData) {
@@ -109,7 +107,8 @@ export default class HistogramExpenses {
             this.aggregatedData.set(key, sum)
         })
 
-        this.yScale.domain([0, d3.max(this.aggregatedData.values())])
+        const maxExpense = d3.max(this.aggregatedData.values())
+        this.yScale.domain([0, maxExpense + 0.1 * maxExpense])
         this.yAxisContainer
             .transition()
             .duration(CONSTANTS.TRANSITION_DURATION)
