@@ -66,7 +66,7 @@ export default class HistogramExpenses {
         this.xScale = d3.scaleBand()
             .domain(this.aggregatedData.keys())
             .range([0, this.dimensions.boundedWidth])
-            .padding(0.4) // change padding value to make bars thinner or thicker
+            .padding(0.6) // change padding value to make bars thinner or thicker
 
         const maxExpense = d3.max(this.aggregatedData.values())
         this.yScale = d3.scaleLinear()
