@@ -3,7 +3,6 @@ import * as d3 from 'd3'
 import crossfilter from 'crossfilter2';
 import buildings from '../data/Datasets/Attributes/BuildingsAugmented.csv'
 import participants from '../data/Datasets/Attributes/ParticipantsAugmented.csv'
-import droppedOut from '../data/Datasets/Attributes/DroppedOut.csv'
 import './styles/index.scss'
 import ParallelPlot from './ParallelPlot.js';
 import MapPlot from './MapPlot.js';
@@ -68,9 +67,6 @@ window.app = (new class {
       .attr('id', 'tooltip')
       .attr('style', 'position: absolute; opacity: 0; box-sizing: border-box; top: 0; left: -100000000px; padding: 4px 4px; font-family: sans-serif; font-size: 12px; color: #333; background-color: #eee; border: 1px solid #333; border-radius: 4px; pointer-events: none; z-index: 1;');
 
-
-    // let listDroppedOut = droppedOut.slice(1).map(d => +d[0])
-
     let slicedParticipants = participants.slice(1) //.filter(d => (!listDroppedOut.includes(+d[0])) && d[8] !== "") // filter dropped out and participants without valid house
       .map(d => (
         {
@@ -105,7 +101,7 @@ window.app = (new class {
     const sc = new ScatterPlot();
     sc.initChart(d3.select(".center").select(".down"), slicedParticipants);
     const pca = new PCAChart()
-    pca.initChart(d3.select('.right'), slicedParticipants)
+    pca.initChart(d3.select('.pca-plot'), slicedParticipants)
 
     // Add an event listener for the custom event dispatcher
     let that = this;
@@ -132,7 +128,7 @@ window.app = (new class {
       // update charts
       let newSelected = crossfilterParticipants.allFiltered()
       let newIds = newSelected.map(d => d.participantId)
-      map.updateChart(newIds)
+      map.updateChart(newSelected)
       pp.updateChart(newIds)
       hist.updateChart(newSelected)
       sc.updateChart(newSelected)

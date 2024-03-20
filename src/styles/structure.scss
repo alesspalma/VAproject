@@ -33,17 +33,28 @@ html {
 
     .top {
         flex: 1;
-        // Add styles for the top div here
     }
 
     .down {
         flex: 1;
-        // Add styles for the down div here
     }
 }
 
 .right {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .pca-title {
+        font-weight: 700;
+        font-size: 20px;
+        text-align: center;
+        padding-top: 1.5vh;
+    }
+
+    .pca-plot {
+        flex: 1;
+    }
 }
 
 .footer {

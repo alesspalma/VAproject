@@ -19,6 +19,7 @@ export default class MapPlot {
         this.legendSquareSize = 150
         this.legendPadding = 50
         this.legendFontSize = 170
+        this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Participants selected: ", 0], ["Avg Engel's coeff: ", 0]])
     }
 
     initChart(sel, buildingsData, participantsData) {
@@ -139,9 +140,29 @@ export default class MapPlot {
             }
         }))
 
+        // Create a toolbox group of text elements in the top right corner
+        this.toolboxData.set("Participants selected: ", participantsData.length)
+        this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
+        this.toolbox = this.wrapper.append('g')
+            .attr('class', 'toolbox')
+            .selectAll('text')
+            .data(this.toolboxData)
+            .enter()
+            .append('text')
+            .attr('x', this.maxX - 2500)
+            .attr('y', (d, i) => -this.maxY + 100 + i * 300)
+            .attr('fill', 'black')
+            .text(d => d[0] + d[1].toString())
+            .attr('font-size', 200)
+            .attr('font-weight', 700)
+
     }
 
-    updateChart(participantIds) {
+    updateChart(participantsData) {
+
+        let participantIds = participantsData.map(d => d.participantId)
+
+        // Update the circles
         this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
             .filter(d => participantIds.includes(d.participantId))
             .attr('fill', CONSTANTS.ACTIVE_COLOR)
@@ -150,5 +171,11 @@ export default class MapPlot {
             .transition()
             .duration(CONSTANTS.TRANSITION_DURATION)
             .attr('r', 40)
+
+        // Update the toolbox
+        this.toolboxData.set("Participants selected: ", participantsData.length)
+        this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
+        this.toolbox.data(this.toolboxData)
+            .text(d => d[0] + d[1].toString())
     }
 }
