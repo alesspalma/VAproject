@@ -21,6 +21,116 @@ window.app = (new class {
     this.filters = new Map() // it will be a map like { 'age': [min, max], 'educationLevel': ['Low', 'HighSchoolOrCollege', 'Bachelors'], ... }
   }
 
+  cleanScreen() {
+    // clean the screen and the filters from previous charts
+
+    d3.select('.left').select('.map_wrapper').remove()
+    d3.select('.center').select('.top').select('*').remove()
+    d3.select('.center').select('.down').select('*').remove()
+    d3.select('.pca-plot').select('*').remove()
+    d3.select('.footer').select('*').remove()
+    this.filters = new Map()
+  }
+
+  initParticipants(slicedBuildings, slicedParticipants, isActivitiesView) {
+
+    // clean screen
+    this.cleanScreen()
+
+    // init screen
+    const map = new MapPlot();
+    map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
+    const pp = new ParallelPlot();
+    pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
+    const hist = new HistogramExpenses();
+    hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
+    const sc = new ScatterPlot();
+    sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
+    const pca = new PCAChart();
+    pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView);
+
+    // Add an event listener for the custom event dispatcher
+    let that = this;
+    CONSTANTS.DISPATCHER.on('userSelection', function (event) {
+      // iterate over event and update filters
+      for (let key in event) {
+        if (event[key] === null) that.filters.delete(key);
+        else that.filters.set(key, event[key])
+      }
+      // console.log(event)
+
+      // filter data
+      let crossfilterParticipants = crossfilter(slicedParticipants)
+
+      that.filters.forEach((value, key) => {
+        if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
+        else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+      })
+
+      console.log(crossfilterParticipants.allFiltered().length)
+
+      // update charts
+      let newSelected = crossfilterParticipants.allFiltered()
+      let newIds = newSelected.map(d => d.participantId)
+      map.updateChart(newSelected)
+      pp.updateChart(newIds)
+      hist.updateChart(newSelected)
+      sc.updateChart(newSelected)
+      if (!that.filters.has("participantId")) pca.updateChart(newIds)
+    });
+
+  }
+
+  initActivities(slicedBuildings, slicedParticipants, isActivitiesView) {
+
+    // clean screen
+    this.cleanScreen()
+
+    // init screen
+    const map = new MapPlot();
+    map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
+    const pp = new ParallelPlot();
+    pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
+    const hist = new HistogramExpenses();
+    hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
+    const sc = new ScatterPlot();
+    sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
+    const pca = new PCAChart()
+    pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView)
+
+    // Add an event listener for the custom event dispatcher
+    let that = this;
+    CONSTANTS.DISPATCHER.on('userSelection', function (event) {
+      // iterate over event and update filters
+      for (let key in event) {
+        if (event[key] === null) that.filters.delete(key);
+        else that.filters.set(key, event[key])
+      }
+      // console.log(event)
+
+      // filter data
+      let crossfilterParticipants = crossfilter(slicedParticipants)
+
+      that.filters.forEach((value, key) => {
+        if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
+        else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+      })
+
+      console.log(crossfilterParticipants.allFiltered().length)
+
+      // update charts
+      let newSelected = crossfilterParticipants.allFiltered()
+      let newIds = newSelected.map(d => d.participantId)
+      map.updateChart(newSelected)
+      pp.updateChart(newIds)
+      hist.updateChart(newSelected)
+      sc.updateChart(newSelected)
+      if (!that.filters.has("participantId")) pca.updateChart(newIds)
+    });
+  }
+
   async init() {
 
     // TODO: Implement data cleaning functions in utils.js and here just call them before initializing charts
@@ -67,7 +177,7 @@ window.app = (new class {
       .attr('id', 'tooltip')
       .attr('style', 'position: absolute; opacity: 0; box-sizing: border-box; top: 0; left: -100000000px; padding: 4px 4px; font-family: sans-serif; font-size: 12px; color: #333; background-color: #eee; border: 1px solid #333; border-radius: 4px; pointer-events: none; z-index: 1;');
 
-    let slicedParticipants = participants.slice(1) //.filter(d => (!listDroppedOut.includes(+d[0])) && d[8] !== "") // filter dropped out and participants without valid house
+    let slicedParticipants = participants.slice(1) // map the data to the correct types
       .map(d => (
         {
           participantId: +d[0],
@@ -90,114 +200,17 @@ window.app = (new class {
         }
       ))
 
-    function initParticipants(isActivitiesView) {
-      // Now that data is ready, initialize the charts
+    // Now that data is ready, initialize the charts
 
-      const map = new MapPlot();
-      map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
-      const pp = new ParallelPlot();
-      pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
-      const hist = new HistogramExpenses();
-      hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
-      const sc = new ScatterPlot();
-      sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
-      const pca = new PCAChart();
-      pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView);
+    this.initParticipants(slicedBuildings, slicedParticipants, false) // at the beginning, the view is participants view
 
-      // Add an event listener for the custom event dispatcher
-      let that = this;
-      CONSTANTS.DISPATCHER.on('userSelection', function (event) {
-        // iterate over event and update filters
-        for (let key in event) {
-          if (event[key] === null) that.filters.delete(key);
-          else that.filters.set(key, event[key])
-        }
-        // console.log(event)
-        // console.log('actual filters:', that.filters);
-
-        // filter data
-        let crossfilterParticipants = crossfilter(slicedParticipants)
-
-        that.filters.forEach((value, key) => {
-          if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-          else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
-          else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-        })
-
-        console.log(crossfilterParticipants.allFiltered().length)
-
-        // update charts
-        let newSelected = crossfilterParticipants.allFiltered()
-        let newIds = newSelected.map(d => d.participantId)
-        map.updateChart(newSelected)
-        pp.updateChart(newIds)
-        hist.updateChart(newSelected)
-        sc.updateChart(newSelected)
-        if (!that.filters.has("participantId")) pca.updateChart(newIds)
-      });
-    }
-
-    function initActivities(isActivitiesView) {
-      // Now that data is ready, initialize the charts
-
-      const map = new MapPlot();
-      map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
-      const pp = new ParallelPlot();
-      pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
-      const hist = new HistogramExpenses();
-      hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
-      const sc = new ScatterPlot();
-      sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
-      const pca = new PCAChart()
-      pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView)
-
-      // Add an event listener for the custom event dispatcher
-      let that = this;
-      CONSTANTS.DISPATCHER.on('userSelection', function (event) {
-        // iterate over event and update filters
-        for (let key in event) {
-          if (event[key] === null) that.filters.delete(key);
-          else that.filters.set(key, event[key])
-        }
-        // console.log(event)
-        // console.log('actual filters:', that.filters);
-
-        // filter data
-        let crossfilterParticipants = crossfilter(slicedParticipants)
-
-        that.filters.forEach((value, key) => {
-          if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-          else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
-          else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-        })
-
-        console.log(crossfilterParticipants.allFiltered().length)
-
-        // update charts
-        let newSelected = crossfilterParticipants.allFiltered()
-        let newIds = newSelected.map(d => d.participantId)
-        map.updateChart(newSelected)
-        pp.updateChart(newIds)
-        hist.updateChart(newSelected)
-        sc.updateChart(newSelected)
-        if (!that.filters.has("participantId")) pca.updateChart(newIds)
-      });
-    }
-
-
-
-    //initParticipants()
-
-    d3.select('#toggleButton').on('change', function () {
-      const checkbox = d3.select(this).node()
-      if (checkbox.checked) {
+    d3.select('#toggleButton').on('change', (event) => {
+      if (event.target.checked) {
         // do stuff for activities
-        console.log('Activities view')
-        initActivities(checkbox.checked)
+        this.initActivities(slicedBuildings, slicedParticipants, event.target.checked)
       } else {
-        // do stuff for participant
-        console.log('Participants view')
-        initParticipants(checkbox.checked)
+        // do stuff for participants
+        this.initParticipants(slicedBuildings, slicedParticipants, event.target.checked)
       }
     })
 
