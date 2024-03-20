@@ -22,7 +22,7 @@ export default class MapPlot {
         this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Participants selected: ", 0], ["Avg Engel's coeff: ", 0]])
     }
 
-    initChart(sel, buildingsData, participantsData) {
+    initChart(sel, buildingsData, participantsData, isActivitiesView) {
         const { width, height } = sel.node().getBoundingClientRect()
         const { margin } = this.dimensions
         this.dimensions.width = width
@@ -84,15 +84,6 @@ export default class MapPlot {
             .attr('stroke', 'black')
             .attr('stroke-width', 5)
 
-        legendWrapper.append('circle')
-            .attr('class', 'legend_circle')
-            .attr('cx', this.minX + this.legendSquareSize / 2)
-            .attr('cy', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
-            .attr('r', (this.legendSquareSize / 2) - 5)
-            .attr('fill', CONSTANTS.ACTIVE_COLOR)
-            .attr('stroke', 'black')
-            .attr('stroke-width', 5)
-
         legendWrapper.selectAll('.legend_labels')
             .data(CONSTANTS.BUILDING_TYPES)
             .enter()
@@ -105,56 +96,139 @@ export default class MapPlot {
             .attr("dominant-baseline", "central")
             .attr('font-size', this.legendFontSize)
 
-        legendWrapper.append('text')
-            .attr('class', 'legend_labels')
-            .attr('x', this.minX + this.legendSquareSize * 1.3)
-            .attr('y', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
-            .attr('fill', 'black')
-            .text('Participant')
-            .attr("dominant-baseline", "central")
-            .attr('font-size', this.legendFontSize)
+        if (!isActivitiesView) {
+            legendWrapper.append('circle')
+                .attr('class', 'legend_circle')
+                .attr('cx', this.minX + this.legendSquareSize / 2)
+                .attr('cy', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                .attr('r', (this.legendSquareSize / 2) - 5)
+                .attr('fill', CONSTANTS.ACTIVE_COLOR)
+                .attr('stroke', 'black')
+                .attr('stroke-width', 5)
 
-        // Draw the participants
-        this.participants = this.wrapper.append("g")
-            .attr("class", "participants_wrapper")
-            .selectAll("circle")
-            .data(participantsData)
-            .enter()
-            .append("circle")
-            .attr("cx", d => d.locationX)
-            .attr("cy", d => -d.locationY)
-            .attr("r", 40)
-            .attr("fill", CONSTANTS.ACTIVE_COLOR)
-            .attr("stroke", "black")
-            .attr("stroke-width", 5)
+            legendWrapper.append('text')
+                .attr('class', 'legend_labels')
+                .attr('x', this.minX + this.legendSquareSize * 1.3)
+                .attr('y', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                .attr('fill', 'black')
+                .text('Participant')
+                .attr("dominant-baseline", "central")
+                .attr('font-size', this.legendFontSize)
 
-        // Implement brushing on participants
-        d3.select(".participants_wrapper").call(d3.brush().on('end', ({ selection }) => {
-            if (selection) {
-                const [[x0, y0], [x1, y1]] = selection
-                // Inform dispatcher that the selection has changed
-                CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: [x0, x1], locationY: [-y1, -y0] });
-            } else {
-                // Inform dispatcher that the selection has changed
-                CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: null, locationY: null });
-            }
-        }))
+            // Draw the participants
+            this.participants = this.wrapper.append("g")
+                .attr("class", "participants_wrapper")
+                .selectAll("circle")
+                .data(participantsData)
+                .enter()
+                .append("circle")
+                .attr("cx", d => d.locationX)
+                .attr("cy", d => -d.locationY)
+                .attr("r", 40)
+                .attr("fill", CONSTANTS.ACTIVE_COLOR)
+                .attr("stroke", "black")
+                .attr("stroke-width", 5)
 
-        // Create a toolbox group of text elements in the top right corner
-        this.toolboxData.set("Participants selected: ", participantsData.length)
-        this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
-        this.toolbox = this.wrapper.append('g')
-            .attr('class', 'toolbox')
-            .selectAll('text')
-            .data(this.toolboxData)
-            .enter()
-            .append('text')
-            .attr('x', this.maxX - 2500)
-            .attr('y', (d, i) => -this.maxY + 100 + i * 300)
-            .attr('fill', 'black')
-            .text(d => d[0] + d[1].toString())
-            .attr('font-size', 200)
-            .attr('font-weight', 700)
+            // Implement brushing on participants
+            d3.select(".participants_wrapper").call(d3.brush().on('end', ({ selection }) => {
+                if (selection) {
+                    const [[x0, y0], [x1, y1]] = selection
+                    // Inform dispatcher that the selection has changed
+                    CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: [x0, x1], locationY: [-y1, -y0] });
+                } else {
+                    // Inform dispatcher that the selection has changed
+                    CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: null, locationY: null });
+                }
+            }))
+
+            // Create a toolbox group of text elements in the top right corner
+            this.toolboxData.set("Participants selected: ", participantsData.length)
+            this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
+            this.toolbox = this.wrapper.append('g')
+                .attr('class', 'toolbox')
+                .selectAll('text')
+                .data(this.toolboxData)
+                .enter()
+                .append('text')
+                .attr('x', this.maxX - 2500)
+                .attr('y', (d, i) => -this.maxY + 100 + i * 300)
+                .attr('fill', 'black')
+                .text(d => d[0] + d[1].toString())
+                .attr('font-size', 200)
+                .attr('font-weight', 700)
+        }
+        else {
+            // legendWrapper.append('circle')
+            //     .attr('class', 'legend_circle')
+            //     .attr('cx', this.minX + this.legendSquareSize / 2)
+            //     .attr('cy', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+            //     .attr('r', (this.legendSquareSize / 2) - 5)
+            //     .attr('fill', CONSTANTS.BUILDINGS_COLORS[2])
+            //     .attr('stroke', 'black')
+            //     .attr('stroke-width', 5)
+
+            // legendWrapper.append('circle')
+            //     .attr('class', 'legend_circle')
+            //     .attr('cx', this.minX + this.legendSquareSize / 2)
+            //     .attr('cy', legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+            //     .attr('r', (this.legendSquareSize / 2) - 5)
+            //     .attr('fill', CONSTANTS.BUILDINGS_COLORS[3])
+            //     .attr('stroke', 'black')
+            //     .attr('stroke-width', 5)
+
+            legendWrapper.append("path")
+                .attr("d", d3.symbol().type(d3.symbolStar).size(6000))
+                .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
+                .attr('fill', CONSTANTS.BUILDINGS_COLORS[2])
+                .attr('stroke', 'black')
+                .attr('stroke-width', 10)
+
+            legendWrapper.append("path")
+                .attr("d", d3.symbol().type(d3.symbolStar).size(6000))
+                .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
+                .attr('fill', CONSTANTS.BUILDINGS_COLORS[3])
+                .attr('stroke', 'black')
+                .attr('stroke-width', 10)
+
+            legendWrapper.append('text')
+                .attr('class', 'legend_labels')
+                .attr('x', this.minX + this.legendSquareSize * 1.3)
+                .attr('y', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                .attr('fill', 'black')
+                .text('Pub')
+                .attr("dominant-baseline", "central")
+                .attr('font-size', this.legendFontSize)
+
+            legendWrapper.append('text')
+                .attr('class', 'legend_labels')
+                .attr('x', this.minX + this.legendSquareSize * 1.3)
+                .attr('y', legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                .attr('fill', 'black')
+                .text('Restaurant')
+                .attr("dominant-baseline", "central")
+                .attr('font-size', this.legendFontSize)
+
+            // Draw the participants
+            this.participants = this.wrapper.append("g")
+                .attr("class", "activity_wrapper")
+                .selectAll("path")
+                .data(buildingsData.filter(d => d.buildingType == "Pub" || d.buildingType == "Restaurant"))
+                .enter()
+                .append("path")
+                .attr("d", d3.symbol().type(d3.symbolStar).size(5000))
+                .attr("transform", d => {
+                    let sumX = 0, sumY = 0, count = 0;
+                    for (let i = 0; i < d.location.coordinates[0].length; i++) {
+                        sumX += d.location.coordinates[0][i][0];
+                        sumY -= d.location.coordinates[0][i][1];
+                        count++;
+                    }
+                    return `translate(${sumX / count}, ${sumY / count})`;
+                })
+                .attr("fill", d => (d.buildingType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+                .attr("stroke", "black")
+                .attr("stroke-width", 10);
+        }
 
     }
 

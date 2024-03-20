@@ -90,59 +90,114 @@ window.app = (new class {
         }
       ))
 
-    // Now that data is ready, initialize the charts
+    function initParticipants(isActivitiesView) {
+      // Now that data is ready, initialize the charts
 
-    const map = new MapPlot();
-    map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants);
-    const pp = new ParallelPlot();
-    pp.initChart(d3.select(".footer"), slicedParticipants);
-    const hist = new HistogramExpenses();
-    hist.initChart(d3.select(".center").select(".top"), slicedParticipants);
-    const sc = new ScatterPlot();
-    sc.initChart(d3.select(".center").select(".down"), slicedParticipants);
-    const pca = new PCAChart()
-    pca.initChart(d3.select('.pca-plot'), slicedParticipants)
+      const map = new MapPlot();
+      map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
+      const pp = new ParallelPlot();
+      pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
+      const hist = new HistogramExpenses();
+      hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
+      const sc = new ScatterPlot();
+      sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
+      const pca = new PCAChart();
+      pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView);
 
-    // Add an event listener for the custom event dispatcher
-    let that = this;
-    CONSTANTS.DISPATCHER.on('userSelection', function (event) {
-      // iterate over event and update filters
-      for (let key in event) {
-        if (event[key] === null) that.filters.delete(key);
-        else that.filters.set(key, event[key])
-      }
-      // console.log(event)
-      // console.log('actual filters:', that.filters);
+      // Add an event listener for the custom event dispatcher
+      let that = this;
+      CONSTANTS.DISPATCHER.on('userSelection', function (event) {
+        // iterate over event and update filters
+        for (let key in event) {
+          if (event[key] === null) that.filters.delete(key);
+          else that.filters.set(key, event[key])
+        }
+        // console.log(event)
+        // console.log('actual filters:', that.filters);
 
-      // filter data
-      let crossfilterParticipants = crossfilter(slicedParticipants)
+        // filter data
+        let crossfilterParticipants = crossfilter(slicedParticipants)
 
-      that.filters.forEach((value, key) => {
-        if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-        else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
-        else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-      })
+        that.filters.forEach((value, key) => {
+          if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+          else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
+          else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        })
 
-      console.log(crossfilterParticipants.allFiltered().length)
+        console.log(crossfilterParticipants.allFiltered().length)
 
-      // update charts
-      let newSelected = crossfilterParticipants.allFiltered()
-      let newIds = newSelected.map(d => d.participantId)
-      map.updateChart(newSelected)
-      pp.updateChart(newIds)
-      hist.updateChart(newSelected)
-      sc.updateChart(newSelected)
-      if (!that.filters.has("participantId")) pca.updateChart(newIds)
-    });
+        // update charts
+        let newSelected = crossfilterParticipants.allFiltered()
+        let newIds = newSelected.map(d => d.participantId)
+        map.updateChart(newSelected)
+        pp.updateChart(newIds)
+        hist.updateChart(newSelected)
+        sc.updateChart(newSelected)
+        if (!that.filters.has("participantId")) pca.updateChart(newIds)
+      });
+    }
+
+    function initActivities(isActivitiesView) {
+      // Now that data is ready, initialize the charts
+
+      const map = new MapPlot();
+      map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
+      const pp = new ParallelPlot();
+      pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
+      const hist = new HistogramExpenses();
+      hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
+      const sc = new ScatterPlot();
+      sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
+      const pca = new PCAChart()
+      pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView)
+
+      // Add an event listener for the custom event dispatcher
+      let that = this;
+      CONSTANTS.DISPATCHER.on('userSelection', function (event) {
+        // iterate over event and update filters
+        for (let key in event) {
+          if (event[key] === null) that.filters.delete(key);
+          else that.filters.set(key, event[key])
+        }
+        // console.log(event)
+        // console.log('actual filters:', that.filters);
+
+        // filter data
+        let crossfilterParticipants = crossfilter(slicedParticipants)
+
+        that.filters.forEach((value, key) => {
+          if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+          else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
+          else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        })
+
+        console.log(crossfilterParticipants.allFiltered().length)
+
+        // update charts
+        let newSelected = crossfilterParticipants.allFiltered()
+        let newIds = newSelected.map(d => d.participantId)
+        map.updateChart(newSelected)
+        pp.updateChart(newIds)
+        hist.updateChart(newSelected)
+        sc.updateChart(newSelected)
+        if (!that.filters.has("participantId")) pca.updateChart(newIds)
+      });
+    }
+
+
+
+    //initParticipants()
 
     d3.select('#toggleButton').on('change', function () {
       const checkbox = d3.select(this).node()
       if (checkbox.checked) {
         // do stuff for activities
         console.log('Activities view')
+        initActivities(checkbox.checked)
       } else {
         // do stuff for participant
         console.log('Participants view')
+        initParticipants(checkbox.checked)
       }
     })
 
