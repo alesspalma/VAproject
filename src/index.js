@@ -83,7 +83,7 @@ window.app = (new class {
 
   }
 
-  initActivities(slicedBuildings, slicedParticipants, isActivitiesView) {
+  initActivities(slicedBuildings, slicedParticipants, slicedActivity, isActivitiesView) {
 
     // clean screen
     this.cleanScreen()
@@ -94,7 +94,7 @@ window.app = (new class {
     const pp = new ParallelPlot();
     pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
     const hist = new HistogramExpenses();
-    hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
+    hist.initChart(d3.select(".center").select(".top"), slicedActivity, isActivitiesView);
     const sc = new ScatterPlot();
     sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
     const pca = new PCAChart()
@@ -222,7 +222,7 @@ window.app = (new class {
     d3.select('#toggleButton').on('change', (event) => {
       if (event.target.checked) {
         // do stuff for activities
-        this.initActivities(slicedBuildings, slicedParticipants, event.target.checked)
+        this.initActivities(slicedBuildings, slicedParticipants, slicedActivity, event.target.checked)
       } else {
         // do stuff for participants
         this.initParticipants(slicedBuildings, slicedParticipants, event.target.checked)
