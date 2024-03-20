@@ -11,6 +11,7 @@ import CONSTANTS from './constants.js';
 import PCAChart from './PCAChart.js';
 import BoxPlot from './BoxPlot.js'
 import ScatterPlot from './ScatterPlot.js';
+import activity from '../data/Datasets/Attributes/ActivityAugmented.csv'
 
 
 window.app = (new class {
@@ -90,6 +91,20 @@ window.app = (new class {
         }
       ))
 
+    let slicedActivity = activity.slice(1).map(d => (
+      {
+        participantId: +d[0],
+        venueId: +d[1],
+        venueType: d[2],
+        count: +d[3],
+        maxOccupancy: +d[4],
+        location: d[5],
+        buildingId: +d[6],
+        cost: +d[7],
+        distance: +d[8]
+      }
+    ))
+
     function initParticipants(isActivitiesView) {
       // Now that data is ready, initialize the charts
 
@@ -145,7 +160,7 @@ window.app = (new class {
       const pp = new ParallelPlot();
       pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
       const hist = new HistogramExpenses();
-      hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
+      hist.initChart(d3.select(".center").select(".top"), slicedActivity, isActivitiesView);
       const sc = new ScatterPlot();
       sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
       const pca = new PCAChart()
