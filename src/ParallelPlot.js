@@ -83,8 +83,10 @@ export default class ParallelPlot {
       .call(g => g.append("text")
         .style("text-anchor", "middle")
         .attr("y", -10)
-        .text(d => d)
-        .style("fill", "black"))
+        .text(d => d.charAt(0).toUpperCase() + d.slice(1))
+        .style("fill", "black")
+        .attr("font-weight", 700)
+        .style("font-size", "14px"))
 
     // Create the brush behavior.
     const brushWidth = 50;
