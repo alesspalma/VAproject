@@ -12,7 +12,7 @@ const CONSTANTS = {
     BUILDING_TYPES: ['Residential', 'Commercial', 'Pub', 'Restaurant', 'School'],
     NUMBER_FORMATTER: new Intl.NumberFormat('en-US', {
         style: 'decimal',
-        minimumFractionDigits: 2,
+        minimumFractionDigits: 0,
         maximumFractionDigits: 2
     })
 };

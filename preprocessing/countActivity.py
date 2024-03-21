@@ -6,6 +6,13 @@ df = pd.read_csv(
     "../data/Datasets/Journals/CheckinJournal.csv", dtype={"participantId": str}
 )
 
+dropped_out = pd.read_csv(
+    "../preprocessing/DroppedOut.csv", dtype={"participantId": str}
+)
+
+# Filter out the participants who dropped out
+df = df[~df["participantId"].isin(dropped_out["participantId"])]
+
 # Filter rows where venueType is 'Restaurant' or 'Pub'
 filtered_df = df[df["venueType"].isin(["Restaurant", "Pub"])]
 
@@ -119,5 +126,5 @@ final_df = add_distance_column(merged_df)
 print("Updated df with distance column successfully.")
 
 # Write the updated DataFrame to a CSV file
-final_df.to_csv("../data/Datasets/Attributes/ActivityAugmented.csv", index=False)
-print("Output CSV file ActivityAugmented generated successfully.")
+final_df.to_csv("../data/Datasets/Attributes/VisitsLog.csv", index=False)
+print("Output CSV file VisitsLog generated successfully.")

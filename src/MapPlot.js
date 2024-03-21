@@ -177,14 +177,14 @@ export default class MapPlot {
             //     .attr('stroke-width', 5)
 
             legendWrapper.append("path")
-                .attr("d", d3.symbol().type(d3.symbolStar).size(6000))
+                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
                 .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
                 .attr('fill', CONSTANTS.BUILDINGS_COLORS[2])
                 .attr('stroke', 'black')
                 .attr('stroke-width', 10)
 
             legendWrapper.append("path")
-                .attr("d", d3.symbol().type(d3.symbolStar).size(6000))
+                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
                 .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
                 .attr('fill', CONSTANTS.BUILDINGS_COLORS[3])
                 .attr('stroke', 'black')
@@ -215,7 +215,7 @@ export default class MapPlot {
                 .data(buildingsData.filter(d => d.buildingType == "Pub" || d.buildingType == "Restaurant"))
                 .enter()
                 .append("path")
-                .attr("d", d3.symbol().type(d3.symbolStar).size(5000))
+                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
                 .attr("transform", d => {
                     let sumX = 0, sumY = 0, count = 0;
                     for (let i = 0; i < d.location.coordinates[0].length; i++) {

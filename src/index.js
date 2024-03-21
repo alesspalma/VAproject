@@ -11,7 +11,7 @@ import CONSTANTS from './constants.js';
 import PCAChart from './PCAChart.js';
 import BoxPlot from './BoxPlot.js'
 import ScatterPlot from './ScatterPlot.js';
-import activity from '../data/Datasets/Attributes/ActivityAugmented.csv'
+import visits from '../data/Datasets/Attributes/VisitsLog.csv'
 
 
 window.app = (new class {
@@ -26,10 +26,10 @@ window.app = (new class {
     // clean the screen and the filters from previous charts
 
     d3.select('.left').select('.map_wrapper').remove()
-    d3.select('.center').select('.top').select('*').remove()
-    d3.select('.center').select('.down').select('*').remove()
-    d3.select('.pca-plot').select('*').remove()
-    d3.select('.footer').select('*').remove()
+    d3.select('.center').select('.top').selectAll('*').remove()
+    d3.select('.center').select('.down').selectAll('*').remove()
+    d3.select('.pca-plot').selectAll('*').remove()
+    d3.select('.footer').selectAll('*').remove()
     this.filters = new Map()
   }
 
@@ -201,7 +201,7 @@ window.app = (new class {
         }
       ))
 
-    let slicedActivity = activity.slice(1).map(d => (
+    let slicedVisits = visits.slice(1).map(d => (
       {
         participantId: +d[0],
         venueId: +d[1],
@@ -222,7 +222,7 @@ window.app = (new class {
     d3.select('#toggleButton').on('change', (event) => {
       if (event.target.checked) {
         // do stuff for activities
-        this.initActivities(slicedBuildings, slicedParticipants, slicedActivity, event.target.checked)
+        this.initActivities(slicedBuildings, slicedParticipants, slicedVisits, event.target.checked)
       } else {
         // do stuff for participants
         this.initParticipants(slicedBuildings, slicedParticipants, event.target.checked)
