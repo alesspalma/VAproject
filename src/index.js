@@ -12,6 +12,8 @@ import PCAChart from './PCAChart.js';
 import BoxPlot from './BoxPlot.js'
 import ScatterPlot from './ScatterPlot.js';
 import visits from '../data/Datasets/Attributes/VisitsLog.csv'
+import LinePlot from './LinePlot.js';
+import earning from '../preprocessing/EarningsLog.csv'
 
 
 window.app = (new class {
@@ -83,7 +85,7 @@ window.app = (new class {
 
   }
 
-  initActivities(slicedBuildings, slicedParticipants, slicedActivity, isActivitiesView) {
+  initActivities(slicedBuildings, slicedParticipants, slicedActivity, slicedMonth, isActivitiesView) {
 
     // clean screen
     this.cleanScreen()
@@ -95,8 +97,10 @@ window.app = (new class {
     pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
     const hist = new HistogramExpenses();
     hist.initChart(d3.select(".center").select(".top"), slicedActivity, isActivitiesView);
-    const sc = new ScatterPlot();
-    sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
+    const lp = new LinePlot();
+    lp.initChart(d3.select(".center").select(".down"), slicedMonth);
+    //const hmp = new HeatmapPlot();
+    //hmp.initChart(d3.select(".center").select(".down"), slicedMonth);
     const pca = new PCAChart()
     pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView)
 
@@ -215,6 +219,15 @@ window.app = (new class {
       }
     ))
 
+    let slicedEarning = earning.slice(1).map(d => (
+      {
+        venueId: +d[0],
+        venueType: d[1],
+        timestamp: d[2],
+        amount: +d[3],
+      }
+    ))
+
     // Now that data is ready, initialize the charts
 
     this.initParticipants(slicedBuildings, slicedParticipants, false) // at the beginning, the view is participants view
@@ -222,7 +235,7 @@ window.app = (new class {
     d3.select('#toggleButton').on('change', (event) => {
       if (event.target.checked) {
         // do stuff for activities
-        this.initActivities(slicedBuildings, slicedParticipants, slicedVisits, event.target.checked)
+        this.initActivities(slicedBuildings, slicedParticipants, slicedVisits, slicedEarning, event.target.checked)
       } else {
         // do stuff for participants
         this.initParticipants(slicedBuildings, slicedParticipants, event.target.checked)
