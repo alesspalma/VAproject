@@ -13,7 +13,7 @@ import BoxPlot from './BoxPlot.js'
 import ScatterPlot from './ScatterPlot.js';
 import visits from '../data/Datasets/Attributes/VisitsLog.csv'
 import LinePlot from './LinePlot.js';
-import earning from '../preprocessing/EarningsLog.csv'
+import earning from '../preprocessing/MonthlyLog.csv'
 
 
 window.app = (new class {

@@ -139,7 +139,8 @@ export default class MapPlot {
                     // Inform dispatcher that the selection has changed
                     CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: null, locationY: null });
                 }
-            }))
+            })
+            )
 
             // Create a toolbox group of text elements in the top right corner
             this.toolboxData.set("Participants selected: ", participantsData.length)
