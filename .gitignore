@@ -293,10 +293,20 @@ GitHub.sublime-settings
 
 
 # data folder
-data/
-derivedData/
-inClassExample/
+data/Datasets/ActivityLogs/
+data/Datasets/Journals/
+data/Datasets/*.png
+data/*.png
+data/Datasets/*.pdf
+data/*.pdf
+data/Answer Sheets/*
+data/Datasets/Attributes/Apartments.csv
+data/Datasets/Attributes/Buildings.csv
+data/Datasets/Attributes/Employers.csv
+data/Datasets/Attributes/Jobs.csv
+data/Datasets/Attributes/Participants.csv
+data/Datasets/Attributes/Pubs.csv
+data/Datasets/Attributes/Restaurants.csv
+data/Datasets/Attributes/Schools.csv
 
 preprocessing/*.csv
-
-movement*.csv

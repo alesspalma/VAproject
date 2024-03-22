@@ -1,9 +1,12 @@
 import 'normalize.css'
+import './styles/index.scss'
 import * as d3 from 'd3'
 import crossfilter from 'crossfilter2';
 import buildings from '../data/Datasets/Attributes/BuildingsAugmented.csv'
 import participants from '../data/Datasets/Attributes/ParticipantsAugmented.csv'
-import './styles/index.scss'
+import activities from '../data/Datasets/Attributes/ActivitiesAugmented.csv'
+import visitsPerParticipant from '../data/Datasets/Attributes/VisitsLog.csv'
+import monthlyLog from '../data/Datasets/Attributes/MonthlyLog.csv'
 import ParallelPlot from './ParallelPlot.js';
 import MapPlot from './MapPlot.js';
 import HistogramPlot from './HistogramPlot.js';
@@ -11,9 +14,6 @@ import CONSTANTS from './constants.js';
 import PCAChart from './PCAChart.js';
 import ScatterPlot from './ScatterPlot.js';
 import LinePlot from './LinePlot.js';
-import activities from '../data/Datasets/Attributes/ActivitiesAugmented.csv'
-import visitsPerParticipant from '../data/Datasets/Attributes/VisitsLog.csv'
-import monthlyLog from '../preprocessing/MonthlyLog.csv'
 
 
 window.app = (new class {
