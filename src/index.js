@@ -36,7 +36,6 @@ window.app = (new class {
   }
 
   initParticipants(slicedBuildings, slicedParticipants, isActivitiesView) {
-
     // clean screen
     this.cleanScreen()
 
@@ -60,7 +59,6 @@ window.app = (new class {
         if (event[key] === null) that.filters.delete(key);
         else that.filters.set(key, event[key])
       }
-      // console.log(event)
 
       // filter data
       let crossfilterParticipants = crossfilter(slicedParticipants)
@@ -70,8 +68,6 @@ window.app = (new class {
         else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
         else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
       })
-
-      // console.log(crossfilterParticipants.allFiltered().length)
 
       // update charts
       let newSelected = crossfilterParticipants.allFiltered()
@@ -86,7 +82,6 @@ window.app = (new class {
   }
 
   initActivities(slicedBuildings, slicedActivities, slicedVisitsPerParticipant, slicedMonthlyLog, isActivitiesView) {
-
     // clean screen
     this.cleanScreen()
 
@@ -99,8 +94,8 @@ window.app = (new class {
     hist.initChart(d3.select(".center").select(".top"), slicedVisitsPerParticipant, isActivitiesView);
     const lp = new LinePlot();
     lp.initChart(d3.select(".center").select(".down"), slicedMonthlyLog);
-    // const pca = new PCAChart()
-    // pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView)
+    const pca = new PCAChart()
+    pca.initChart(d3.select('.pca-plot'), slicedActivities, isActivitiesView)
 
     // Add an event listener for the custom event dispatcher
     let that = this;
@@ -110,29 +105,24 @@ window.app = (new class {
         if (event[key] === null) that.filters.delete(key);
         else that.filters.set(key, event[key])
       }
-      console.log(event)
 
       // filter data
       let crossfilterActivities = crossfilter(slicedActivities)
-      let crossfilterVisitsPerParticipant = crossfilter(slicedVisitsPerParticipant)
-      let crossfilterMonthlyLog = crossfilter(slicedMonthlyLog)
 
       that.filters.forEach((value, key) => {
-        // if (key == "venueId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-        if (typeof value[0] === 'number') crossfilterActivities.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
+        if (key == "venueId") crossfilterActivities.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        else if (typeof value[0] === 'number') crossfilterActivities.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
         else crossfilterActivities.dimension(d => d[key]).filterFunction(d => value.includes(d))
       })
-
-      // console.log(crossfilterParticipants.allFiltered().length)
 
       // update charts
       let newSelected = crossfilterActivities.allFiltered()
       let newIds = newSelected.map(d => d.venueId)
       map.updateChart(newSelected)
-      // pp.updateChart(newIds)
-      // hist.updateChart(newSelected)
-      // lp.updateChart(newSelected)
-      // if (!that.filters.has("participantId")) pca.updateChart(newIds)
+      pp.updateChart(newIds)
+      hist.updateChart(slicedVisitsPerParticipant.filter(d => newIds.includes(d.venueId)))
+      lp.updateChart(slicedMonthlyLog.filter(d => newIds.includes(d.venueId)))
+      if (!that.filters.has("venueId")) pca.updateChart(newIds)
     });
   }
 

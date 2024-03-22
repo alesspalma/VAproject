@@ -13,6 +13,8 @@ export default class HistogramPlot {
         }
         this.aggregatedData = new Map([['Education', 0], ['Food', 0], ['Recreation', 0], ['Shelter', 0]])
         this.distanceData = new Map([['<1.25 Km', 0], ['<2.55 Km', 0], ['>2.55 Km', 0]])
+        this.lowDistance = 1250.0 //1269.067;
+        this.highDistance = 2550.0 //2562.569;        
     }
 
     initChart(sel, data, isActivitiesView) {
@@ -22,6 +24,7 @@ export default class HistogramPlot {
         this.dimensions.height = height
         this.dimensions.boundedWidth = width - margin.left - margin.right
         this.dimensions.boundedHeight = height - margin.top - margin.bottom
+        this.isActivitiesView = isActivitiesView
 
         this.wrapper = sel.append('svg')
             .attr('class', 'histogram_wrapper')
@@ -101,23 +104,9 @@ export default class HistogramPlot {
                 .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
                 .style('fill', 'black');
         } else {
-            // Function to categorize distances
-            const lowDistance = 1250.0//1269.067;
-            const highDistance = 2550.0//2562.569;
-
-            function categorizeDistance(distance) {
-                if (distance <= lowDistance) {
-                    return "<1.25 Km";
-                } else if (distance > lowDistance && distance <= highDistance) {
-                    return "<2.55 Km";
-                } else if (distance > highDistance) {
-                    return ">2.55 Km";
-                }
-            }
-
             // Process the data and add a new column
-            data.forEach(function (entry) {
-                entry.distanceCategory = categorizeDistance(entry.distance);
+            data.forEach((entry) => {
+                entry.distanceCategory = this.categorizeDistance(entry.distance);
             });
 
             // Aggregate the data for each distance category, summing on count
@@ -162,35 +151,78 @@ export default class HistogramPlot {
                 .attr('text-anchor', 'middle')
                 .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
                 .style('fill', 'black');
+        }
+    }
 
+    categorizeDistance(distance) {
+        if (distance <= this.lowDistance) {
+            return "<1.25 Km";
+        } else if (distance > this.lowDistance && distance <= this.highDistance) {
+            return "<2.55 Km";
+        } else {
+            return ">2.55 Km";
         }
     }
 
     updateChart(participantsData) {
-        this.aggregatedData.forEach((value, key) => {
-            let sum = d3.sum(participantsData, d => d[key.toLowerCase() + 'Expense'])
-            this.aggregatedData.set(key, sum)
-        })
+        if (!this.isActivitiesView) {
+            this.aggregatedData.forEach((value, key) => {
+                let sum = d3.sum(participantsData, d => d[key.toLowerCase() + 'Expense'])
+                this.aggregatedData.set(key, sum)
+            })
 
-        const maxExpense = d3.max(this.aggregatedData.values())
-        this.yScale.domain([0, maxExpense + 0.1 * maxExpense])
-        this.yAxisContainer
-            .transition()
-            .duration(CONSTANTS.TRANSITION_DURATION)
-            .call(d3.axisLeft(this.yScale))
+            const maxExpense = d3.max(this.aggregatedData.values())
+            this.yScale.domain([0, maxExpense + 0.1 * maxExpense])
+            this.yAxisContainer
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .call(d3.axisLeft(this.yScale))
 
-        this.bars.data(this.aggregatedData)
-            .transition()
-            .duration(CONSTANTS.TRANSITION_DURATION)
-            .attr('y', d => this.yScale(d[1]))
-            .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
+            this.bars.data(this.aggregatedData)
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr('y', d => this.yScale(d[1]))
+                .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
 
-        // Update the text values and their positions
-        this.barsText.data(this.aggregatedData)
-            .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
-            .transition()
-            .duration(CONSTANTS.TRANSITION_DURATION)
-            .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 2)
-            .attr('y', d => this.yScale(d[1]) - 5);
+            // Update the text values and their positions
+            this.barsText.data(this.aggregatedData)
+                .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 2)
+                .attr('y', d => this.yScale(d[1]) - 5);
+        }
+        else {
+            participantsData.forEach((entry) => {
+                entry.distanceCategory = this.categorizeDistance(entry.distance);
+            });
+
+            this.distanceData.forEach((value, key) => {
+                let sum = d3.sum(participantsData, d => d.distanceCategory === key ? d.count : 0)
+                this.distanceData.set(key, sum)
+            })
+
+            // Update the scales
+            const maxCount = d3.max(this.distanceData.values())
+            this.yScale.domain([0, maxCount + 0.1 * maxCount])
+            this.yAxisContainer
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .call(d3.axisLeft(this.yScale))
+
+            this.bars.data(this.distanceData)
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr('y', d => this.yScale(d[1]))
+                .attr('height', d => this.dimensions.boundedHeight - this.yScale(d[1]))
+
+            // Update the text values and their positions
+            this.barsText.data(this.distanceData)
+                .text(d => CONSTANTS.NUMBER_FORMATTER.format(d[1]))
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 2)
+                .attr('y', d => this.yScale(d[1]) - 5);
+        }
     }
 }

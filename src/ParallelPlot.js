@@ -74,6 +74,7 @@ export default class ParallelPlot {
       .attr("d", pathDrawer)
       .style("fill", "none")
       .style("stroke", CONSTANTS.ACTIVE_COLOR)
+      .style("stroke-width", this.isActivitiesView ? 2 : 1)
       .style("opacity", 0.6)
 
     if (isActivitiesView) {
@@ -130,8 +131,9 @@ export default class ParallelPlot {
 
   updateChart(participantIds) {
     this.linesPP.style("stroke", CONSTANTS.INACTIVE_COLOR)
-      .filter(d => participantIds.includes(d.participantId))
-      .style("stroke", CONSTANTS.ACTIVE_COLOR)
+      .filter(d => participantIds.includes(this.isActivitiesView ? d.venueId : d.participantId))
+      .style("stroke", this.isActivitiesView ? (d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+        : CONSTANTS.ACTIVE_COLOR)
       .raise()
   }
 }

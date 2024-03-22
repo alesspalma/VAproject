@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
 import CONSTANTS from './constants'
-import performPCA from './utils.js'
+import { performPCA } from './utils.js'
+import { performActivitiesPCA } from './utils.js'
 
 export default class PCAChart {
   constructor() {
@@ -16,13 +17,14 @@ export default class PCAChart {
     this.selectedCluster = null
   }
 
-  async initChart(sel, participantsData) {
+  async initChart(sel, data, isActivitiesView) {
     const { width, height } = sel.node().getBoundingClientRect()
     const { margin } = this.dimensions
     this.dimensions.width = width
     this.dimensions.height = height
     this.dimensions.boundedWidth = width - margin.left - margin.right
     this.dimensions.boundedHeight = height - margin.top - margin.bottom
+    this.isActivitiesView = isActivitiesView
 
     this.svg = sel.append('svg')
       .attr('class', 'PCAChart_wrapper')
@@ -42,8 +44,13 @@ export default class PCAChart {
     this.yScale = d3.scaleLinear()
       .range([this.dimensions.boundedHeight, 0])
 
-    let participantsId = participantsData.map(d => d.participantId)
-    let pcaData = await this._performPCACall(participantsId)
+    if (!isActivitiesView) {
+      var participantsId = data.map(d => d.participantId)
+      var pcaData = await this._performPCACall(participantsId)
+    } else {
+      var venueId = data.map(d => d.venueId)
+      var pcaData = await this._performPCACall(venueId)
+    }
 
     const xExtent = d3.extent(pcaData, d => d.x)
     const yExtent = d3.extent(pcaData, d => d.y)
@@ -55,60 +62,106 @@ export default class PCAChart {
     this.xAxisContainer.call(d3.axisBottom(this.xScale))
     this.yAxisContainer.call(d3.axisLeft(this.yScale))
 
-    let that = this
-    this.circles = this.bounds.selectAll('circle')
-      .data(pcaData, d => d.participantId)
-      .enter()
-      .append('circle')
-      .attr('cx', d => this.xScale(d.x))
-      .attr('cy', d => this.yScale(d.y))
-      .attr('r', 5)
-      .attr('fill', d => this.colors[d.c])
-      .attr("stroke", "black")
-      .attr("stroke-width", 1)
-      // for the tooltip
-      .on('mouseover', function (event, d) {
-        d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.participantId)
-      })
-      .on('mouseout', function () {
-        d3.select('#tooltip').style('opacity', 0)
-      })
-      .on('mousemove', function (event) {
-        d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
-      })
-      .on('click', function (event, d) {
-        if (that.selectedCluster === d.c) {
-          that.selectedCluster = null
+    if (!isActivitiesView) {
+      let that = this
+      this.circles = this.bounds.selectAll('circle')
+        .data(pcaData, d => d.participantId)
+        .enter()
+        .append('circle')
+        .attr('cx', d => this.xScale(d.x))
+        .attr('cy', d => this.yScale(d.y))
+        .attr('r', 5)
+        .attr('fill', d => this.colors[d.c])
+        .attr("stroke", "black")
+        .attr("stroke-width", 1)
+        // for the tooltip
+        .on('mouseover', function (event, d) {
+          d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.participantId)
+        })
+        .on('mouseout', function () {
+          d3.select('#tooltip').style('opacity', 0)
+        })
+        .on('mousemove', function (event) {
+          d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+        })
+        .on('click', function (event, d) {
+          if (that.selectedCluster === d.c) {
+            that.selectedCluster = null
 
-          // remove highlight to everything because I just deselected the cluster
-          that.circles.attr("stroke", "black")
-            .attr("stroke-width", 1)
+            // remove highlight to everything because I just deselected the cluster
+            that.circles.attr("stroke", "black")
+              .attr("stroke-width", 1)
 
-          CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: null })
-        }
-        else {
-          that.selectedCluster = d.c
+            CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: null })
+          }
+          else {
+            that.selectedCluster = d.c
 
-          that.circles.attr("stroke", "black")
-            .attr("stroke-width", 1)
+            that.circles.attr("stroke", "black")
+              .attr("stroke-width", 1)
 
-          // highlight the selected cluster
-          let selectedCircles = that.circles.filter(innerD => innerD.c === d.c)
-          selectedCircles.attr("stroke", "rgb(230,171,2)")
-            .attr("stroke-width", 1.5)
-          CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: selectedCircles.data().map(d => d.participantId) })
-        }
-      })
+            // highlight the selected cluster
+            let selectedCircles = that.circles.filter(innerD => innerD.c === d.c)
+            selectedCircles.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
+              .attr("stroke-width", 1.5)
+            CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: selectedCircles.data().map(d => d.participantId) })
+          }
+        })
+    } else {
+      let that = this
+      this.stars = this.bounds.selectAll('stars')
+        .data(pcaData, d => d.venueId)
+        .enter()
+        .append('path')
+        .attr("d", d3.symbol().type(d3.symbolStar).size(100))
+        .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
+        .attr('fill', d => this.colors[d.c])
+        .attr("stroke", "black")
+        .attr("stroke-width", 1)
+        // for the tooltip
+        .on('mouseover', function (event, d) {
+          d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.venueId)
+        })
+        .on('mouseout', function () {
+          d3.select('#tooltip').style('opacity', 0)
+        })
+        .on('mousemove', function (event) {
+          d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+        })
+        .on('click', function (event, d) {
+          if (that.selectedCluster === d.c) {
+            that.selectedCluster = null
+
+            // remove highlight to everything because I just deselected the cluster
+            that.stars.attr("stroke", "black")
+              .attr("stroke-width", 1)
+
+            CONSTANTS.DISPATCHER.call('userSelection', null, { venueId: null })
+          }
+          else {
+            that.selectedCluster = d.c
+
+            that.stars.attr("stroke", "black")
+              .attr("stroke-width", 1)
+
+            // highlight the selected cluster
+            let selectedStars = that.stars.filter(innerD => innerD.c === d.c)
+            selectedStars.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
+              .attr("stroke-width", 1.5)
+            CONSTANTS.DISPATCHER.call('userSelection', null, { venueId: selectedStars.data().map(d => d.venueId) })
+          }
+        })
+    }
 
   }
 
   async _performPCACall(participantsId) {
     let pcaData;
-    const pcaPromise = performPCA(participantsId);
+    const pcaPromise = this.isActivitiesView ? performActivitiesPCA(participantsId) : performPCA(participantsId);
+    let idName = this.isActivitiesView ? 'venueId' : 'participantId';
     await pcaPromise.then(transformedData => {
-      // console.log('Transformed data in PCAChart.js:', transformedData);
       pcaData = transformedData.map(row => ({
-        participantId: +row[0],
+        [idName]: +row[0],
         x: +row[1],
         y: +row[2],
         z: +row[3],
@@ -140,61 +193,118 @@ export default class PCAChart {
       .duration(CONSTANTS.TRANSITION_DURATION)
       .call(d3.axisLeft(this.yScale))
 
-    // update circles
-    let that = this
-    this.circles = this.circles
-      .data(pcaData, d => d.participantId)
-      .join(
-        enter => enter.append('circle')
-          .attr('cx', d => this.xScale(d.x))
-          .attr('cy', d => this.yScale(d.y))
-          .attr('fill', d => this.colors[d.c])
-          .attr("stroke", "black")
-          // tooltip
-          .on('mouseover', function (event, d) {
-            d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.participantId)
-          })
-          .on('mouseout', function () {
-            d3.select('#tooltip').style('opacity', 0)
-          })
-          .on('mousemove', function (event) {
-            d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
-          })
-          .on('click', function (event, d) {
-            if (that.selectedCluster === d.c) {
-              that.selectedCluster = null
+    if (!this.isActivitiesView) {
+      // update circles
+      let that = this
+      this.circles = this.circles
+        .data(pcaData, d => d.participantId)
+        .join(
+          enter => enter.append('circle')
+            .attr('cx', d => this.xScale(d.x))
+            .attr('cy', d => this.yScale(d.y))
+            .attr('fill', d => this.colors[d.c])
+            .attr("stroke", "black")
+            // tooltip
+            .on('mouseover', function (event, d) {
+              d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.participantId)
+            })
+            .on('mouseout', function () {
+              d3.select('#tooltip').style('opacity', 0)
+            })
+            .on('mousemove', function (event) {
+              d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+            })
+            .on('click', function (event, d) {
+              if (that.selectedCluster === d.c) {
+                that.selectedCluster = null
 
-              // remove highlight to everything because I just deselected the cluster
-              that.circles.attr("stroke", "black")
-                .attr("stroke-width", 1)
+                // remove highlight to everything because I just deselected the cluster
+                that.circles.attr("stroke", "black")
+                  .attr("stroke-width", 1)
 
-              CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: null })
-            }
-            else {
-              that.selectedCluster = d.c
+                CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: null })
+              }
+              else {
+                that.selectedCluster = d.c
 
-              that.circles.attr("stroke", "black")
-                .attr("stroke-width", 1)
+                that.circles.attr("stroke", "black")
+                  .attr("stroke-width", 1)
 
-              // highlight the selected cluster
-              let selectedCircles = that.circles.filter(innerD => innerD.c === d.c)
-              selectedCircles.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
-                .attr("stroke-width", 1.5)
-              CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: selectedCircles.data().map(d => d.participantId) })
-            }
-          })
-          .attr('r', 0)
-          .transition()
-          .duration(CONSTANTS.TRANSITION_DURATION)
-          .attr('r', 5),
-        update => update
-          .transition()
-          .duration(CONSTANTS.TRANSITION_DURATION)
-          .attr('cx', d => this.xScale(d.x))
-          .attr('cy', d => this.yScale(d.y))
-          .attr('fill', d => this.colors[d.c])
-          .attr('r', 5),
-        exit => exit.remove()
-      )
+                // highlight the selected cluster
+                let selectedCircles = that.circles.filter(innerD => innerD.c === d.c)
+                selectedCircles.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
+                  .attr("stroke-width", 1.5)
+                CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: selectedCircles.data().map(d => d.participantId) })
+              }
+            })
+            .attr('r', 0)
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr('r', 5),
+          update => update
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr('cx', d => this.xScale(d.x))
+            .attr('cy', d => this.yScale(d.y))
+            .attr('fill', d => this.colors[d.c])
+            .attr('r', 5),
+          exit => exit.remove()
+        )
+    } else {
+      // update stars
+      let that = this
+      this.stars = this.stars
+        .data(pcaData, d => d.venueId)
+        .join(
+          enter => enter.append('path')
+            .attr("d", d3.symbol().type(d3.symbolStar).size(100))
+            .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
+            .attr('fill', d => this.colors[d.c])
+            .attr("stroke", "black")
+            // tooltip
+            .on('mouseover', function (event, d) {
+              d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.venueId)
+            })
+            .on('mouseout', function () {
+              d3.select('#tooltip').style('opacity', 0)
+            })
+            .on('mousemove', function (event) {
+              d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+            })
+            .on('click', function (event, d) {
+              if (that.selectedCluster === d.c) {
+                that.selectedCluster = null
+
+                // remove highlight to everything because I just deselected the cluster
+                that.stars.attr("stroke", "black")
+                  .attr("stroke-width", 1)
+
+                CONSTANTS.DISPATCHER.call('userSelection', null, { venueId: null })
+              }
+              else {
+                that.selectedCluster = d.c
+
+                that.stars.attr("stroke", "black")
+                  .attr("stroke-width", 1)
+
+                // highlight the selected cluster
+                let selectedStars = that.stars.filter(innerD => innerD.c === d.c)
+                selectedStars.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
+                  .attr("stroke-width", 1.5)
+                CONSTANTS.DISPATCHER.call('userSelection', null, { venueId: selectedStars.data().map(d => d.venueId) })
+              }
+            })
+            .attr('r', 0)
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr('r', 5),
+          update => update
+            .transition()
+            .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
+            .attr('fill', d => this.colors[d.c]),
+          exit => exit.remove()
+        )
+    }
   }
 }

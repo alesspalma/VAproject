@@ -116,7 +116,7 @@ html {
 }
 
 input:checked+.slider {
-    background-color: #BF8A85;
+    background-color: #BF5B17;
 }
 
 input:focus+.slider {
@@ -159,4 +159,5 @@ input:checked+.slider .off {
 
 .slider.round:before {
     border-radius: 50%;
+    //border: 1px #eed solid;
 }

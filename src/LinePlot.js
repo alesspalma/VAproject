@@ -8,7 +8,7 @@ export default class LinePlot {
         top: 30,
         right: 30,
         bottom: 55,
-        left: 75
+        left: 80
       }
     };
   }
@@ -56,7 +56,7 @@ export default class LinePlot {
       .attr('text-anchor', 'middle')
       .attr("font-weight", 700)
       .style("font-size", "16px")
-      .text('Earnings Amount ($)') //count
+      .text('Earnings ($)') //count
       .attr('fill', 'black');
 
     const parsedData = this.parseData(data);
@@ -82,8 +82,9 @@ export default class LinePlot {
       .y(d => this.yScale(d.earnings));
 
     this.lineWrapper.selectAll(".line")
-      .data(parsedData)
-      .enter().append("path")
+      .data(parsedData, d => d.key)
+      .enter()
+      .append("path")
       .attr("class", "line")
       .attr("d", d => this.line(d.values))
       .attr("stroke", d => (d.values[0].venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
@@ -93,30 +94,46 @@ export default class LinePlot {
 
   parseData(data) {
     const parseDate = d3.timeParse("%Y-%m");
-    const map = d3.rollup(
+    const mapResult = d3.rollup(
       data,
       v => v.map(d => ({ timestamp: parseDate(d.timestamp), earnings: d.earnings, venueType: d.venueType })), //count
       d => d.venueId
     );
 
-    return Array.from(map, ([key, values]) => ({ key, values }));
+    return Array.from(mapResult, ([key, values]) => ({ key, values })); // array of objects { key: venueId, values: [{month}, ...] }
   }
 
   updateChart(data) {
     const parsedData = this.parseData(data);
-    const xDomain = parsedData[0].values.map(d => d.timestamp);
-    const yDomain = [0, d3.max(parsedData, d => d3.max(d.values, v => v.earnings))]; //count
 
-    this.xScale.domain(xDomain);
-    this.yScale.domain(yDomain);
-
-    this.xAxisContainer.call(d3.axisBottom(this.xScale));
-    this.yAxisContainer.call(d3.axisLeft(this.yScale));
-
-    this.lineWrapper.selectAll(".line")
-      .data(parsedData)
+    this.yScale.domain([0, d3.max(parsedData, d => d3.max(d.values, v => v.earnings))]);
+    this.yAxisContainer
       .transition()
       .duration(CONSTANTS.TRANSITION_DURATION)
-      .attr("d", d => this.line(d.values));
+      .call(d3.axisLeft(this.yScale));
+
+    // Draw the lines
+    this.line = d3.line()
+      .x(d => this.xScale(d.timestamp))
+      .y(d => this.yScale(d.earnings));
+
+    this.lineWrapper.selectAll(".line")
+      .data(parsedData, d => d.key)
+      .join(
+        enter => enter.append("path")
+          .attr("class", "line")
+          .attr("d", d => this.line(d.values))
+          .attr("stroke", d => (d.values[0].venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+          .attr("fill", "none")
+          .attr("stroke-width", 0)
+          .transition()
+          .duration(CONSTANTS.TRANSITION_DURATION)
+          .attr("stroke-width", 2),
+        update => update
+          .transition()
+          .duration(CONSTANTS.TRANSITION_DURATION)
+          .attr("d", d => this.line(d.values)),
+        exit => exit.remove()
+      );
   }
 }

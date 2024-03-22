@@ -8,7 +8,7 @@ export default class ScatterPlot {
         top: 30,
         right: 30,
         bottom: 40,
-        left: 75
+        left: 80
       }
     };
   }
