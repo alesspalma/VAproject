@@ -6,14 +6,14 @@ import participants from '../data/Datasets/Attributes/ParticipantsAugmented.csv'
 import './styles/index.scss'
 import ParallelPlot from './ParallelPlot.js';
 import MapPlot from './MapPlot.js';
-import HistogramExpenses from './HistogramExpenses.js';
+import HistogramPlot from './HistogramPlot.js';
 import CONSTANTS from './constants.js';
 import PCAChart from './PCAChart.js';
-import BoxPlot from './BoxPlot.js'
 import ScatterPlot from './ScatterPlot.js';
-import visits from '../data/Datasets/Attributes/VisitsLog.csv'
 import LinePlot from './LinePlot.js';
-import earning from '../preprocessing/MonthlyLog.csv'
+import activities from '../data/Datasets/Attributes/ActivitiesAugmented.csv'
+import visitsPerParticipant from '../data/Datasets/Attributes/VisitsLog.csv'
+import monthlyLog from '../preprocessing/MonthlyLog.csv'
 
 
 window.app = (new class {
@@ -45,7 +45,7 @@ window.app = (new class {
     map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
     const pp = new ParallelPlot();
     pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
-    const hist = new HistogramExpenses();
+    const hist = new HistogramPlot();
     hist.initChart(d3.select(".center").select(".top"), slicedParticipants, isActivitiesView);
     const sc = new ScatterPlot();
     sc.initChart(d3.select(".center").select(".down"), slicedParticipants, isActivitiesView);
@@ -71,7 +71,7 @@ window.app = (new class {
         else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
       })
 
-      console.log(crossfilterParticipants.allFiltered().length)
+      // console.log(crossfilterParticipants.allFiltered().length)
 
       // update charts
       let newSelected = crossfilterParticipants.allFiltered()
@@ -85,24 +85,22 @@ window.app = (new class {
 
   }
 
-  initActivities(slicedBuildings, slicedParticipants, slicedActivity, slicedMonth, isActivitiesView) {
+  initActivities(slicedBuildings, slicedActivities, slicedVisitsPerParticipant, slicedMonthlyLog, isActivitiesView) {
 
     // clean screen
     this.cleanScreen()
 
     // init screen
     const map = new MapPlot();
-    map.initChart(d3.select(".left"), slicedBuildings, slicedParticipants, isActivitiesView);
+    map.initChart(d3.select(".left"), slicedBuildings, slicedActivities, isActivitiesView);
     const pp = new ParallelPlot();
-    pp.initChart(d3.select(".footer"), slicedParticipants, isActivitiesView);
-    const hist = new HistogramExpenses();
-    hist.initChart(d3.select(".center").select(".top"), slicedActivity, isActivitiesView);
+    pp.initChart(d3.select(".footer"), slicedActivities, isActivitiesView);
+    const hist = new HistogramPlot();
+    hist.initChart(d3.select(".center").select(".top"), slicedVisitsPerParticipant, isActivitiesView);
     const lp = new LinePlot();
-    lp.initChart(d3.select(".center").select(".down"), slicedMonth);
-    //const hmp = new HeatmapPlot();
-    //hmp.initChart(d3.select(".center").select(".down"), slicedMonth);
-    const pca = new PCAChart()
-    pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView)
+    lp.initChart(d3.select(".center").select(".down"), slicedMonthlyLog);
+    // const pca = new PCAChart()
+    // pca.initChart(d3.select('.pca-plot'), slicedParticipants, isActivitiesView)
 
     // Add an event listener for the custom event dispatcher
     let that = this;
@@ -112,27 +110,29 @@ window.app = (new class {
         if (event[key] === null) that.filters.delete(key);
         else that.filters.set(key, event[key])
       }
-      // console.log(event)
+      console.log(event)
 
       // filter data
-      let crossfilterParticipants = crossfilter(slicedParticipants)
+      let crossfilterActivities = crossfilter(slicedActivities)
+      let crossfilterVisitsPerParticipant = crossfilter(slicedVisitsPerParticipant)
+      let crossfilterMonthlyLog = crossfilter(slicedMonthlyLog)
 
       that.filters.forEach((value, key) => {
-        if (key == "participantId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
-        else if (typeof value[0] === 'number') crossfilterParticipants.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
-        else crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        // if (key == "venueId") crossfilterParticipants.dimension(d => d[key]).filterFunction(d => value.includes(d))
+        if (typeof value[0] === 'number') crossfilterActivities.dimension(d => d[key]).filter([value[0], value[1] + 0.0001])
+        else crossfilterActivities.dimension(d => d[key]).filterFunction(d => value.includes(d))
       })
 
-      console.log(crossfilterParticipants.allFiltered().length)
+      // console.log(crossfilterParticipants.allFiltered().length)
 
       // update charts
-      let newSelected = crossfilterParticipants.allFiltered()
-      let newIds = newSelected.map(d => d.participantId)
+      let newSelected = crossfilterActivities.allFiltered()
+      let newIds = newSelected.map(d => d.venueId)
       map.updateChart(newSelected)
-      pp.updateChart(newIds)
-      hist.updateChart(newSelected)
-      sc.updateChart(newSelected)
-      if (!that.filters.has("participantId")) pca.updateChart(newIds)
+      // pp.updateChart(newIds)
+      // hist.updateChart(newSelected)
+      // lp.updateChart(newSelected)
+      // if (!that.filters.has("participantId")) pca.updateChart(newIds)
     });
   }
 
@@ -205,26 +205,36 @@ window.app = (new class {
         }
       ))
 
-    let slicedVisits = visits.slice(1).map(d => (
+    let slicedVisitsPerParticipant = visitsPerParticipant.slice(1).map(d => (
       {
         participantId: +d[0],
         venueId: +d[1],
         venueType: d[2],
         count: +d[3],
-        maxOccupancy: +d[4],
-        location: d[5],
-        buildingId: +d[6],
-        cost: +d[7],
-        distance: +d[8]
+        distance: +d[4]
       }
     ))
 
-    let slicedEarning = earning.slice(1).map(d => (
+    let slicedMonthlyLog = monthlyLog.slice(1).map(d => (
       {
         venueId: +d[0],
         venueType: d[1],
         timestamp: d[2],
-        amount: +d[3],
+        earnings: +d[3],
+        visits: +d[4]
+      }
+    ))
+
+    let slicedActivities = activities.slice(1).map(d => (
+      {
+        venueId: +d[0],
+        cost: +d[1],
+        maxOccupancy: +d[2],
+        locationX: +d[3],
+        locationY: +d[4],
+        venueType: d[5],
+        totalVisits: +d[6],
+        totalEarnings: +d[7]
       }
     ))
 
@@ -235,7 +245,7 @@ window.app = (new class {
     d3.select('#toggleButton').on('change', (event) => {
       if (event.target.checked) {
         // do stuff for activities
-        this.initActivities(slicedBuildings, slicedParticipants, slicedVisits, slicedEarning, event.target.checked)
+        this.initActivities(slicedBuildings, slicedActivities, slicedVisitsPerParticipant, slicedMonthlyLog, event.target.checked)
       } else {
         // do stuff for participants
         this.initParticipants(slicedBuildings, slicedParticipants, event.target.checked)

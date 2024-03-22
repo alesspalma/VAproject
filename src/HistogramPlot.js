@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 import CONSTANTS from './constants'
 
-export default class HistogramExpenses {
+export default class HistogramPlot {
     constructor() {
         this.dimensions = {
             margin: {
@@ -12,7 +12,7 @@ export default class HistogramExpenses {
             }
         }
         this.aggregatedData = new Map([['Education', 0], ['Food', 0], ['Recreation', 0], ['Shelter', 0]])
-        this.distanceData = new Map([['Low', 0], ['Medium', 0], ['High', 0]])
+        this.distanceData = new Map([['<1.25 Km', 0], ['<2.55 Km', 0], ['>2.55 Km', 0]])
     }
 
     initChart(sel, data, isActivitiesView) {
@@ -43,7 +43,7 @@ export default class HistogramExpenses {
             .attr('y', this.dimensions.margin.bottom - 5)
             .attr("font-weight", 700)
             .style("font-size", "16px")
-            .text(isActivitiesView ? 'Distance' : 'Expense Categories')
+            .text(isActivitiesView ? 'Distance Traveled' : 'Expense Categories')
             .attr('fill', 'black');
 
         // Draw the y-axis title
@@ -54,7 +54,7 @@ export default class HistogramExpenses {
             .attr('text-anchor', 'middle')
             .attr("font-weight", 700)
             .style("font-size", "16px")
-            .text(isActivitiesView ? 'Frequencies' : 'Total Expense ($)')
+            .text(isActivitiesView ? 'Number of Visits' : 'Total Expense ($)')
             .attr('fill', 'black');
 
         if (!isActivitiesView) {
@@ -102,13 +102,16 @@ export default class HistogramExpenses {
                 .style('fill', 'black');
         } else {
             // Function to categorize distances
+            const lowDistance = 1250.0//1269.067;
+            const highDistance = 2550.0//2562.569;
+
             function categorizeDistance(distance) {
-                if (distance <= 1269.067) {
-                    return "Low";
-                } else if (distance > 1269.067 && distance <= 2562.569) {
-                    return "Medium";
-                } else if (distance > 2562.569) {
-                    return "High";
+                if (distance <= lowDistance) {
+                    return "<1.25 Km";
+                } else if (distance > lowDistance && distance <= highDistance) {
+                    return "<2.55 Km";
+                } else if (distance > highDistance) {
+                    return ">2.55 Km";
                 }
             }
 

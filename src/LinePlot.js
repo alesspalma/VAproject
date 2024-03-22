@@ -56,11 +56,10 @@ export default class LinePlot {
       .attr('text-anchor', 'middle')
       .attr("font-weight", 700)
       .style("font-size", "16px")
-      .text('Amount') //count
+      .text('Earnings Amount ($)') //count
       .attr('fill', 'black');
 
     const parsedData = this.parseData(data);
-    console.log(parsedData)
 
     // Scales
     this.xScale = d3.scaleTime()
@@ -68,7 +67,7 @@ export default class LinePlot {
       .range([0, this.dimensions.boundedWidth]);
 
     this.yScale = d3.scaleLinear()
-      .domain([0, d3.max(parsedData, d => d3.max(d.values, v => v.amount))]) // count
+      .domain([0, d3.max(parsedData, d => d3.max(d.values, v => v.earnings))])
       .range([this.dimensions.boundedHeight, 0]);
 
     this.xAxisContainer.call(d3.axisBottom(this.xScale).tickFormat(d3.timeFormat("%b '%y")))
@@ -80,7 +79,7 @@ export default class LinePlot {
     // Draw the lines
     this.line = d3.line()
       .x(d => this.xScale(d.timestamp))
-      .y(d => this.yScale(d.amount)); // count
+      .y(d => this.yScale(d.earnings));
 
     this.lineWrapper.selectAll(".line")
       .data(parsedData)
@@ -96,7 +95,7 @@ export default class LinePlot {
     const parseDate = d3.timeParse("%Y-%m");
     const map = d3.rollup(
       data,
-      v => v.map(d => ({ timestamp: parseDate(d.timestamp), amount: d.amount, venueType: d.venueType })), //count
+      v => v.map(d => ({ timestamp: parseDate(d.timestamp), earnings: d.earnings, venueType: d.venueType })), //count
       d => d.venueId
     );
 
@@ -106,7 +105,7 @@ export default class LinePlot {
   updateChart(data) {
     const parsedData = this.parseData(data);
     const xDomain = parsedData[0].values.map(d => d.timestamp);
-    const yDomain = [0, d3.max(parsedData, d => d3.max(d.values, v => v.amount))]; //count
+    const yDomain = [0, d3.max(parsedData, d => d3.max(d.values, v => v.earnings))]; //count
 
     this.xScale.domain(xDomain);
     this.yScale.domain(yDomain);

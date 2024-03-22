@@ -29,6 +29,7 @@ export default class MapPlot {
         this.dimensions.height = height
         this.dimensions.boundedWidth = width - margin.left - margin.right // real internal width
         this.dimensions.boundedHeight = height - margin.top - margin.bottom // real internal height
+        this.isActivitiesView = isActivitiesView
 
         this.wrapper = sel.append('svg')
             .attr('class', 'map_wrapper')
@@ -129,19 +130,6 @@ export default class MapPlot {
                 .attr("stroke", "black")
                 .attr("stroke-width", 5)
 
-            // Implement brushing on participants
-            d3.select(".participants_wrapper").call(d3.brush().on('end', ({ selection }) => {
-                if (selection) {
-                    const [[x0, y0], [x1, y1]] = selection
-                    // Inform dispatcher that the selection has changed
-                    CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: [x0, x1], locationY: [-y1, -y0] });
-                } else {
-                    // Inform dispatcher that the selection has changed
-                    CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: null, locationY: null });
-                }
-            })
-            )
-
             // Create a toolbox group of text elements in the top right corner
             this.toolboxData.set("Participants selected: ", participantsData.length)
             this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
@@ -159,35 +147,17 @@ export default class MapPlot {
                 .attr('font-weight', 700)
         }
         else {
-            // legendWrapper.append('circle')
-            //     .attr('class', 'legend_circle')
-            //     .attr('cx', this.minX + this.legendSquareSize / 2)
-            //     .attr('cy', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
-            //     .attr('r', (this.legendSquareSize / 2) - 5)
-            //     .attr('fill', CONSTANTS.BUILDINGS_COLORS[2])
-            //     .attr('stroke', 'black')
-            //     .attr('stroke-width', 5)
-
-            // legendWrapper.append('circle')
-            //     .attr('class', 'legend_circle')
-            //     .attr('cx', this.minX + this.legendSquareSize / 2)
-            //     .attr('cy', legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
-            //     .attr('r', (this.legendSquareSize / 2) - 5)
-            //     .attr('fill', CONSTANTS.BUILDINGS_COLORS[3])
-            //     .attr('stroke', 'black')
-            //     .attr('stroke-width', 5)
-
             legendWrapper.append("path")
                 .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
                 .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
-                .attr('fill', CONSTANTS.BUILDINGS_COLORS[2])
+                .attr('fill', CONSTANTS.BUILDINGS_COLORS[2]) // star for pubs
                 .attr('stroke', 'black')
                 .attr('stroke-width', 10)
 
             legendWrapper.append("path")
                 .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
                 .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
-                .attr('fill', CONSTANTS.BUILDINGS_COLORS[3])
+                .attr('fill', CONSTANTS.BUILDINGS_COLORS[3]) // star for restaurants
                 .attr('stroke', 'black')
                 .attr('stroke-width', 10)
 
@@ -196,7 +166,7 @@ export default class MapPlot {
                 .attr('x', this.minX + this.legendSquareSize * 1.3)
                 .attr('y', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
                 .attr('fill', 'black')
-                .text('Pub')
+                .text('Pub') // text label for pubs
                 .attr("dominant-baseline", "central")
                 .attr('font-size', this.legendFontSize)
 
@@ -205,52 +175,73 @@ export default class MapPlot {
                 .attr('x', this.minX + this.legendSquareSize * 1.3)
                 .attr('y', legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
                 .attr('fill', 'black')
-                .text('Restaurant')
+                .text('Restaurant') // text label for restaurants
                 .attr("dominant-baseline", "central")
                 .attr('font-size', this.legendFontSize)
 
-            // Draw the participants
+            // Draw the activities
             this.participants = this.wrapper.append("g")
-                .attr("class", "activity_wrapper")
+                .attr("class", "participants_wrapper")
                 .selectAll("path")
-                .data(buildingsData.filter(d => d.buildingType == "Pub" || d.buildingType == "Restaurant"))
+                .data(participantsData)
                 .enter()
                 .append("path")
                 .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
-                .attr("transform", d => {
-                    let sumX = 0, sumY = 0, count = 0;
-                    for (let i = 0; i < d.location.coordinates[0].length; i++) {
-                        sumX += d.location.coordinates[0][i][0];
-                        sumY -= d.location.coordinates[0][i][1];
-                        count++;
-                    }
-                    return `translate(${sumX / count}, ${sumY / count})`;
-                })
-                .attr("fill", d => (d.buildingType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+                .attr("transform", d => `translate(${d.locationX}, ${-d.locationY})`)
+                .attr("fill", d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
                 .attr("stroke", "black")
                 .attr("stroke-width", 10);
         }
 
+        // Implement brushing on participants/activities
+        d3.select(".participants_wrapper").call(d3.brush().on('end', ({ selection }) => {
+            if (selection) {
+                const [[x0, y0], [x1, y1]] = selection
+                // Inform dispatcher that the selection has changed
+                CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: [x0, x1], locationY: [-y1, -y0] });
+            } else {
+                // Inform dispatcher that the selection has changed
+                CONSTANTS.DISPATCHER.call('userSelection', null, { locationX: null, locationY: null });
+            }
+        })
+        )
+
     }
 
     updateChart(participantsData) {
+        if (!this.isActivitiesView) {
+            let participantIds = participantsData.map(d => d.participantId)
 
-        let participantIds = participantsData.map(d => d.participantId)
+            // Update the circles
+            this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
+                .filter(d => participantIds.includes(d.participantId))
+                .attr('fill', CONSTANTS.ACTIVE_COLOR)
+                .raise()
+                .attr('r', 120)
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr('r', 40)
 
-        // Update the circles
-        this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
-            .filter(d => participantIds.includes(d.participantId))
-            .attr('fill', CONSTANTS.ACTIVE_COLOR)
-            .raise()
-            .attr('r', 120)
-            .transition()
-            .duration(CONSTANTS.TRANSITION_DURATION)
-            .attr('r', 40)
+            // Update the toolbox
+            this.toolboxData.set("Participants selected: ", participantsData.length)
+            this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
+            this.toolbox.data(this.toolboxData)
+                .text(d => d[0] + d[1].toString())
+        }
+        else {
+            let activitiesIds = participantsData.map(d => d.venueId)
 
-        // Update the toolbox
-        this.toolboxData.set("Participants selected: ", participantsData.length)
-        this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
-        this.toolbox.data(this.toolboxData)
-            .text(d => d[0] + d[1].toString())
+            // Update the stars
+            this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
+                .attr("stroke-width", 5)
+                .filter(d => activitiesIds.includes(d.venueId))
+                .attr('fill', d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+                .raise()
+                .attr("d", d3.symbol().type(d3.symbolStar).size(21000))
+                .attr("stroke-width", 10)
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
+        }
     }
 }

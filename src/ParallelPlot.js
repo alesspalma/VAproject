@@ -13,13 +13,14 @@ export default class ParallelPlot {
     }
   }
 
-  initChart(sel, data) {
+  initChart(sel, data, isActivitiesView) {
     const { width, height } = sel.node().getBoundingClientRect()
     const { margin } = this.dimensions
     this.dimensions.width = width
     this.dimensions.height = height
     this.dimensions.boundedWidth = width - margin.left - margin.right // real internal width
     this.dimensions.boundedHeight = height - margin.top - margin.bottom // real internal height
+    this.isActivitiesView = isActivitiesView
 
     this.wrapper = sel.append('svg')
       .attr('class', 'parallelPlot_wrapper')
@@ -29,8 +30,14 @@ export default class ParallelPlot {
       .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
     // Extract the list of dimensions we want to keep in the plot
-    let linearDimensions = ["age", "joviality", "engels", "householdSize"]
-    let categoricalDimensions = ["haveKids", "interestGroup", "educationLevel"]
+    if (!isActivitiesView) {
+      var linearDimensions = ["age", "joviality", "engels", "householdSize"]
+      var categoricalDimensions = ["haveKids", "interestGroup", "educationLevel"]
+    }
+    else {
+      var linearDimensions = ["cost", "maxOccupancy", "totalVisits", "totalEarnings"]
+      var categoricalDimensions = ["venueType"]
+    }
     let dimensions = linearDimensions.concat(categoricalDimensions)
 
     // For each linear dimension, I build a linear scale. I store all in a y object
@@ -68,6 +75,10 @@ export default class ParallelPlot {
       .style("fill", "none")
       .style("stroke", CONSTANTS.ACTIVE_COLOR)
       .style("opacity", 0.6)
+
+    if (isActivitiesView) {
+      this.linesPP.style("stroke", d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+    }
 
     // Draw the axes
     let axesPP = this.wrapper.selectAll("myAxis")
