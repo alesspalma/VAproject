@@ -68,7 +68,8 @@ export default class ScatterPlot {
       .range([0, this.dimensions.boundedWidth]);
 
     this.yScale = d3.scaleLinear()
-      .domain([minWage - dataPaddingY, maxWage + dataPaddingY])
+      // .domain([minWage - dataPaddingY, maxWage + dataPaddingY])
+      .domain([0, maxWage + dataPaddingY])
       .range([this.dimensions.boundedHeight, 0]);
 
     this.xAxisContainer.call(d3.axisBottom(this.xScale));
@@ -93,9 +94,6 @@ export default class ScatterPlot {
       .on('mousemove', function (event) {
         d3.select('#tooltip').style('left', (event.pageX - 85) + 'px').style('top', (event.pageY - 60) + 'px');
       })
-      .on('click', function (event, d) {
-        // Your click event logic here
-      })
   }
 
 
@@ -106,8 +104,8 @@ export default class ScatterPlot {
     const dataPaddingY = 0.17 * minWage;
 
     // Scales
-    this.yScale.domain([minWage - dataPaddingY, maxWage + dataPaddingY])
-
+    // this.yScale.domain([minWage - dataPaddingY, maxWage + dataPaddingY])
+    this.yScale.domain([0, maxWage + dataPaddingY])
     this.yAxisContainer
       .transition()
       .duration(CONSTANTS.TRANSITION_DURATION)
@@ -130,9 +128,6 @@ export default class ScatterPlot {
           })
           .on('mousemove', function (event) {
             d3.select('#tooltip').style('left', (event.pageX - 85) + 'px').style('top', (event.pageY - 60) + 'px');
-          })
-          .on('click', function (event, d) {
-            // Your click event logic here
           })
           .attr('r', 0)
           .transition()
