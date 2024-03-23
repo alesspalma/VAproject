@@ -131,9 +131,10 @@ export default class MapPlot {
                 .attr("stroke-width", 5)
 
             // Create a toolbox group of text elements in the top right corner
-            this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Participants selected: ", 0], ["Avg Engel's coeff: ", 0]])
+            this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Participants selected: ", 0], ["Avg Engel's coeff: ", 0], ["Avg Joviality: ", 0]])
             this.toolboxData.set("Participants selected: ", participantsData.length)
             this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
+            this.toolboxData.set("Avg Joviality: ", d3.mean(participantsData, d => d.joviality).toFixed(2))
             this.toolbox = this.wrapper.append('g')
                 .attr('class', 'toolbox')
                 .selectAll('text')
@@ -243,8 +244,13 @@ export default class MapPlot {
             // Update the toolbox
             this.toolboxData.set("Participants selected: ", participantsData.length)
             this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
+            this.toolboxData.set("Avg Joviality: ", d3.mean(participantsData, d => d.joviality).toFixed(2))
             this.toolbox.data(this.toolboxData)
                 .text(d => d[0] + d[1].toString())
+                .attr('fill', CONSTANTS.ACTIVE_COLOR)
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr('fill', 'black')
         }
         else {
             let activitiesIds = participantsData.map(d => d.venueId)
@@ -267,6 +273,10 @@ export default class MapPlot {
             this.toolboxData.set("Percentage of Turnover: ", actualTurnover)
             this.toolbox.data(this.toolboxData)
                 .text(d => d[0] + d[1].toString() + (d[0].includes("Turnover") ? "%" : ""))
+                .attr('fill', CONSTANTS.MAP_TO_COLOR.Restaurant)
+                .transition()
+                .duration(CONSTANTS.TRANSITION_DURATION)
+                .attr('fill', 'black')
         }
     }
 }
