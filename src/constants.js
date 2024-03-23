@@ -14,7 +14,14 @@ const CONSTANTS = {
         style: 'decimal',
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
-    })
+    }),
+    MAP_TO_COLOR: {
+        'Residential': 'rgb(255,255,153)',
+        'Commercial': 'rgb(56,108,176)',
+        'Pub': 'rgb(191,91,23)',
+        'Restaurant': 'rgb(190,184,242)',
+        'School': 'rgb(253,192,134)'
+    },
 };
 
 // Export the constants

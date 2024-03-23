@@ -47,9 +47,8 @@ def pca_participant():
             "Bachelors": 2,
             "Graduate": 3,
         }
-        df.loc[:, "educationLevel"] = df["educationLevel"].apply(lambda x: value_map_d.get(x))
-    #print(df)
-    #print(df.shape)
+        #df.loc[:, "educationLevel"] = df["educationLevel"].apply(lambda x: value_map_d.get(x))
+        df.loc[:, "educationLevel"] = df["educationLevel"].map(value_map_d)
 
     d = df.values
 
@@ -62,7 +61,6 @@ def pca_participant():
 
     # insert the participantId column
     d_pca = numpy.insert(d_pca, 0, df1["participantId"], axis=1)
-    #print(d_pca)
     # perform kmeans on the first 2 principal components
     #clusters = KMeans(n_clusters=4, random_state=1, n_init=10).fit_predict(d_pca[:, 1:3])
     clusters = GaussianMixture(n_components=4, n_init=10, init_params='random_from_data', random_state=0).fit_predict(d_pca[:, 1:3])
@@ -100,9 +98,8 @@ def pca_activities():
             "Pub": 0,
             "Restaurant": 1,
         }
-        df.loc[:, "venueType"] = df["venueType"].apply(lambda x: value_map_d.get(x))
-    #print(df)
-    #print(df.shape)
+        #df.loc[:, "venueType"] = df["venueType"].apply(lambda x: value_map_d.get(x))
+        df.loc[:, "venueType"] = df["venueType"].map(value_map_d)
 
     d = df.values
 
@@ -115,10 +112,9 @@ def pca_activities():
 
     # insert the participantId column
     d_pca = numpy.insert(d_pca, 0, df1["venueId"], axis=1)
-    #print(d_pca)
     # perform kmeans on the first 2 principal components
-    #clusters = KMeans(n_clusters=4, random_state=1, n_init=10).fit_predict(d_pca[:, 1:3])
-    clusters = GaussianMixture(n_components=3, n_init=10, init_params='random_from_data', random_state=0).fit_predict(d_pca[:, 1:3])
+    clusters = KMeans(n_clusters=4, random_state=1, n_init=10).fit_predict(d_pca[:, 1:3])
+    #clusters = GaussianMixture(n_components=3, n_init=10, init_params='random_from_data', random_state=0).fit_predict(d_pca[:, 1:3])
     #clusters = DBSCAN().fit_predict(d_pca[:, 1:3])
 
     #print(len(clusters))
