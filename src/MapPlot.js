@@ -19,7 +19,7 @@ export default class MapPlot {
         this.legendSquareSize = 150
         this.legendPadding = 50
         this.legendFontSize = 170
-        this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Participants selected: ", 0], ["Avg Engel's coeff: ", 0]])
+        this.toolboxData = undefined
     }
 
     initChart(sel, buildingsData, participantsData, isActivitiesView) {
@@ -131,6 +131,7 @@ export default class MapPlot {
                 .attr("stroke-width", 5)
 
             // Create a toolbox group of text elements in the top right corner
+            this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Participants selected: ", 0], ["Avg Engel's coeff: ", 0]])
             this.toolboxData.set("Participants selected: ", participantsData.length)
             this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
             this.toolbox = this.wrapper.append('g')
@@ -191,6 +192,23 @@ export default class MapPlot {
                 .attr("fill", d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
                 .attr("stroke", "black")
                 .attr("stroke-width", 10);
+
+            // Create a toolbox group of text elements in the top right corner
+            this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Activities selected: ", 0], ["Percentage of Turnover: ", 0]])
+            this.toolboxData.set("Activities selected: ", participantsData.length)
+            this.toolboxData.set("Percentage of Turnover: ", (100).toFixed(1))
+            this.toolbox = this.wrapper.append('g')
+                .attr('class', 'toolbox')
+                .selectAll('text')
+                .data(this.toolboxData)
+                .enter()
+                .append('text')
+                .attr('x', this.maxX - 2900)
+                .attr('y', (d, i) => -this.maxY + 100 + i * 300)
+                .attr('fill', 'black')
+                .text(d => d[0] + d[1].toString() + (d[0].includes("Turnover") ? "%" : ""))
+                .attr('font-size', 200)
+                .attr('font-weight', 700)
         }
 
         // Implement brushing on participants/activities
@@ -242,6 +260,13 @@ export default class MapPlot {
                 .transition()
                 .duration(CONSTANTS.TRANSITION_DURATION)
                 .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
+
+            // Update the toolbox
+            let actualTurnover = ((d3.sum(participantsData, d => d.totalEarnings) / CONSTANTS.TOTAL_EARNINGS) * 100).toFixed(1)
+            this.toolboxData.set("Activities selected: ", participantsData.length)
+            this.toolboxData.set("Percentage of Turnover: ", actualTurnover)
+            this.toolbox.data(this.toolboxData)
+                .text(d => d[0] + d[1].toString() + (d[0].includes("Turnover") ? "%" : ""))
         }
     }
 }
