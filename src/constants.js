@@ -4,6 +4,7 @@ const CONSTANTS = {
     ACTIVE_COLOR: '#69b3a2', //'#FA2A55'
     INACTIVE_COLOR: '#b6b6b6',
     PCA_SELECTION_COLOR: 'rgb(230,171,2)',
+    TOTAL_EARNINGS: undefined,
     TRANSITION_DURATION: 1000,
     DISPATCHER: dispatch('userSelection'),
     INTEREST_GROUPS: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],

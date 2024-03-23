@@ -227,6 +227,7 @@ window.app = (new class {
         totalEarnings: +d[7]
       }
     ))
+    CONSTANTS.TOTAL_EARNINGS = d3.sum(slicedActivities, d => d.totalEarnings)
 
     // Now that data is ready, initialize the charts
 
