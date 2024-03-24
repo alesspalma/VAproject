@@ -8,35 +8,38 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.mixture import GaussianMixture
 
 app = Flask(__name__)
-CORS(app) # This will enable CORS for all routes
+CORS(app)  # This will enable CORS for all routes
 
-@app.route('/pca', methods=['POST'])
+
+@app.route("/pca", methods=["POST"])
 def pca_participant():
     # Retrieve input argument from the query parameters
-    data = request.json.get('data')
+    data = request.json.get("data")
 
-    df1 = pandas.read_csv("../data/Datasets/Attributes/ParticipantsAugmented.csv", header=0)
+    df1 = pandas.read_csv(
+        "../data/Datasets/Attributes/ParticipantsAugmented.csv", header=0
+    )
     if len(data) > 0:
         df1 = df1[df1["participantId"].isin(data)]
 
     df = df1[
         [
             # "participantId",
-            "householdSize", # 2
+            "householdSize",  # 2
             # "haveKids",
-            "age", # 2
-            "educationLevel", # 2
+            "age",  # 2
+            "educationLevel",  # 2
             # "interestGroup",
-            "joviality", # 2
-            #"engels",
-            "Education", # 4
-            "Food", # 2
-            "Recreation", # 2
-            "RentAdjustment", # 2
-            "Shelter", # 2
-            #"Wage",
-            #"locationX",
-            #"locationY",
+            "joviality",  # 2
+            # "engels",
+            "Education",  # 4
+            "Food",  # 2
+            "Recreation",  # 2
+            "RentAdjustment",  # 2
+            "Shelter",  # 2
+            # "Wage",
+            # "locationX",
+            # "locationY",
         ]
     ]
 
@@ -47,7 +50,7 @@ def pca_participant():
             "Bachelors": 2,
             "Graduate": 3,
         }
-        #df.loc[:, "educationLevel"] = df["educationLevel"].apply(lambda x: value_map_d.get(x))
+        # df.loc[:, "educationLevel"] = df["educationLevel"].apply(lambda x: value_map_d.get(x))
         df.loc[:, "educationLevel"] = df["educationLevel"].map(value_map_d)
 
     d = df.values
@@ -62,34 +65,38 @@ def pca_participant():
     # insert the participantId column
     d_pca = numpy.insert(d_pca, 0, df1["participantId"], axis=1)
     # perform kmeans on the first 2 principal components
-    #clusters = KMeans(n_clusters=4, random_state=1, n_init=10).fit_predict(d_pca[:, 1:3])
-    clusters = GaussianMixture(n_components=4, n_init=10, init_params='random_from_data', random_state=0).fit_predict(d_pca[:, 1:3])
-    #clusters = DBSCAN().fit_predict(d_pca[:, 1:3])
+    # clusters = KMeans(n_clusters=4, random_state=1, n_init=10).fit_predict(d_pca[:, 1:3])
+    clusters = GaussianMixture(
+        n_components=4, n_init=10, init_params="random_from_data", random_state=0
+    ).fit_predict(d_pca[:, 1:3])
+    # clusters = DBSCAN().fit_predict(d_pca[:, 1:3])
 
-    #print(len(clusters))
+    # print(len(clusters))
     d_pca = numpy.insert(d_pca, len(d_pca[0]), clusters, axis=1)
-    return jsonify({'transformed_data': d_pca.tolist()})
+    return jsonify({"transformed_data": d_pca.tolist()})
 
 
-@app.route('/pca1', methods=['POST'])
+@app.route("/pca1", methods=["POST"])
 def pca_activities():
     # Retrieve input argument from the query parameters
-    data = request.json.get('data')
+    data = request.json.get("data")
 
-    df1 = pandas.read_csv("../data/Datasets/Attributes/ActivitiesAugmented.csv", header=0)
+    df1 = pandas.read_csv(
+        "../data/Datasets/Attributes/ActivitiesAugmented.csv", header=0
+    )
     if len(data) > 0:
         df1 = df1[df1["venueId"].isin(data)]
 
     df = df1[
         [
-            #"venueId", 
-            "cost", 
-            "maxOccupancy", 
-            #"locationX", 
-            #"locationY", 
-            #"venueType", 
-            "totalVisits", 
-            "totalEarnings"
+            # "venueId",
+            "cost",
+            "maxOccupancy",
+            # "locationX",
+            # "locationY",
+            # "venueType",
+            "totalVisits",
+            "totalEarnings",
         ]
     ]
 
@@ -98,7 +105,7 @@ def pca_activities():
             "Pub": 0,
             "Restaurant": 1,
         }
-        #df.loc[:, "venueType"] = df["venueType"].apply(lambda x: value_map_d.get(x))
+        # df.loc[:, "venueType"] = df["venueType"].apply(lambda x: value_map_d.get(x))
         df.loc[:, "venueType"] = df["venueType"].map(value_map_d)
 
     d = df.values
@@ -110,17 +117,19 @@ def pca_activities():
     pca = PCA(n_components=min(len(df.columns), len(df)))
     d_pca = pca.fit_transform(d_std)
 
-    # insert the participantId column
+    # insert the venueId column
     d_pca = numpy.insert(d_pca, 0, df1["venueId"], axis=1)
     # perform kmeans on the first 2 principal components
-    clusters = KMeans(n_clusters=4, random_state=1, n_init=10).fit_predict(d_pca[:, 1:3])
-    #clusters = GaussianMixture(n_components=3, n_init=10, init_params='random_from_data', random_state=0).fit_predict(d_pca[:, 1:3])
-    #clusters = DBSCAN().fit_predict(d_pca[:, 1:3])
+    clusters = KMeans(n_clusters=3, random_state=1, n_init=10).fit_predict(
+        d_pca[:, 1:3]
+    )
+    # clusters = GaussianMixture(n_components=3, n_init=10, init_params='random_from_data', random_state=0).fit_predict(d_pca[:, 1:3])
+    # clusters = DBSCAN().fit_predict(d_pca[:, 1:3])
 
-    #print(len(clusters))
+    # print(len(clusters))
     d_pca = numpy.insert(d_pca, len(d_pca[0]), clusters, axis=1)
-    return jsonify({'transformed_data': d_pca.tolist()})
+    return jsonify({"transformed_data": d_pca.tolist()})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
