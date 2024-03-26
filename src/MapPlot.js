@@ -15,10 +15,9 @@ export default class MapPlot {
         this.minX = -4763 // Minimum x-coordinate of the building data
         this.maxY = 7851 // Maximum y-coordinate of the building data
         this.minY = -31 // Minimum y-coordinate of the building data
-        // this.scaleConstant = 0.08 // Scaling constant for the map
         this.legendSquareSize = 150
         this.legendPadding = 50
-        this.legendFontSize = 170
+        this.legendFontSize = 175
         this.toolboxData = undefined
     }
 
@@ -33,18 +32,9 @@ export default class MapPlot {
 
         this.wrapper = sel.append('svg')
             .attr('class', 'map_wrapper')
-            // .attr('width', this.dimensions.width)
-            // .attr('height', this.dimensions.height)
-            // .append('g')
-            // .attr('transform', `translate(${this.dimensions.margin.left + (-this.minX * this.scaleConstant)}, 
-            //                         ${this.dimensions.margin.top + (this.maxY * this.scaleConstant)}) scale(${this.scaleConstant})`)
             .attr('viewBox', [this.minX - margin.left, -this.maxY - margin.top,
             (this.maxX - this.minX) + margin.left + margin.right,
             (this.maxY - this.minY) + margin.top + margin.bottom]) // top left point is (-4963,-8051), bottom right point is (2851,31)
-
-        // Create an SVG element
-        // const svgMap = this.wrapper.append("g")
-        //     .attr("transform", "translate(" + (-this.minX * this.scaleConstant) + "," + (this.maxY * this.scaleConstant) + ") scale(" + this.scaleConstant + ")");
 
         // Create a color scale for the building types
         const colorScale = d3.scaleOrdinal()
@@ -101,7 +91,7 @@ export default class MapPlot {
             legendWrapper.append('circle')
                 .attr('class', 'legend_circle')
                 .attr('cx', this.minX + this.legendSquareSize / 2)
-                .attr('cy', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                .attr('cy', legendBottomY - CONSTANTS.BUILDING_TYPES.length * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
                 .attr('r', (this.legendSquareSize / 2) - 5)
                 .attr('fill', CONSTANTS.ACTIVE_COLOR)
                 .attr('stroke', 'black')
@@ -110,7 +100,7 @@ export default class MapPlot {
             legendWrapper.append('text')
                 .attr('class', 'legend_labels')
                 .attr('x', this.minX + this.legendSquareSize * 1.3)
-                .attr('y', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                .attr('y', legendBottomY - CONSTANTS.BUILDING_TYPES.length * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
                 .attr('fill', 'black')
                 .text('Participant')
                 .attr("dominant-baseline", "central")
@@ -149,48 +139,40 @@ export default class MapPlot {
                 .attr('font-weight', 700)
         }
         else {
-            legendWrapper.append("path")
-                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
-                .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
-                .attr('fill', CONSTANTS.BUILDINGS_COLORS[2]) // star for pubs
-                .attr('stroke', 'black')
-                .attr('stroke-width', 10)
 
-            legendWrapper.append("path")
-                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
-                .attr("transform", `translate(${this.minX + this.legendSquareSize / 2}, ${legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2)})`)
-                .attr('fill', CONSTANTS.BUILDINGS_COLORS[3]) // star for restaurants
-                .attr('stroke', 'black')
-                .attr('stroke-width', 10)
+            ["Restaurant", "Pub"].forEach((d, i) => {
+                let offset = (d == "Pub") ? 1 : 0
 
-            legendWrapper.append('text')
-                .attr('class', 'legend_labels')
-                .attr('x', this.minX + this.legendSquareSize * 1.3)
-                .attr('y', legendBottomY - 5 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
-                .attr('fill', 'black')
-                .text('Pub') // text label for pubs
-                .attr("dominant-baseline", "central")
-                .attr('font-size', this.legendFontSize)
+                legendWrapper.append('circle')
+                    .attr('class', 'legend_circle')
+                    .attr('cx', this.minX + this.legendSquareSize / 2)
+                    .attr('cy', legendBottomY - (CONSTANTS.BUILDING_TYPES.length + offset) * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                    .attr('r', (this.legendSquareSize / 2) - 5)
+                    .attr('fill', CONSTANTS.MAP_TO_COLOR[d]) // draw circles for pubs and restaurants
+                    .attr('stroke', 'black')
+                    .attr('stroke-width', 5)
 
-            legendWrapper.append('text')
-                .attr('class', 'legend_labels')
-                .attr('x', this.minX + this.legendSquareSize * 1.3)
-                .attr('y', legendBottomY - 6 * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
-                .attr('fill', 'black')
-                .text('Restaurant') // text label for restaurants
-                .attr("dominant-baseline", "central")
-                .attr('font-size', this.legendFontSize)
+                legendWrapper.append('text')
+                    .attr('class', 'legend_labels')
+                    .attr('x', this.minX + this.legendSquareSize * 1.3)
+                    .attr('y', legendBottomY - (CONSTANTS.BUILDING_TYPES.length + offset) * (this.legendSquareSize + this.legendPadding) + (this.legendSquareSize / 2))
+                    .attr('fill', 'black')
+                    .text(d) // draw text for pubs and restaurants
+                    .attr("dominant-baseline", "central")
+                    .attr('font-size', this.legendFontSize)
+            })
 
             // Draw the activities
             this.participants = this.wrapper.append("g")
                 .attr("class", "participants_wrapper")
-                .selectAll("path")
+                .selectAll("circle")
                 .data(participantsData)
                 .enter()
-                .append("path")
-                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
-                .attr("transform", d => `translate(${d.locationX}, ${-d.locationY})`)
-                .attr("fill", d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+                .append("circle")
+                .attr("cx", d => d.locationX)
+                .attr("cy", d => -d.locationY)
+                .attr("r", 60)
+                .attr("fill", d => CONSTANTS.MAP_TO_COLOR[d.venueType])
                 .attr("stroke", "black")
                 .attr("stroke-width", 10);
 
@@ -255,17 +237,15 @@ export default class MapPlot {
         else {
             let activitiesIds = participantsData.map(d => d.venueId)
 
-            // Update the stars
+            // Update the circles
             this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
-                .attr("stroke-width", 5)
                 .filter(d => activitiesIds.includes(d.venueId))
-                .attr('fill', d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+                .attr('fill', d => CONSTANTS.MAP_TO_COLOR[d.venueType])
                 .raise()
-                .attr("d", d3.symbol().type(d3.symbolStar).size(21000))
-                .attr("stroke-width", 10)
+                .attr('r', 180)
                 .transition()
                 .duration(CONSTANTS.TRANSITION_DURATION)
-                .attr("d", d3.symbol().type(d3.symbolStar).size(7000))
+                .attr('r', 60)
 
             // Update the toolbox
             let actualTurnover = ((d3.sum(participantsData, d => d.totalEarnings) / CONSTANTS.TOTAL_EARNINGS) * 100).toFixed(1)

@@ -62,16 +62,19 @@ export default class PCAChart {
     this.xAxisContainer.call(d3.axisBottom(this.xScale))
     this.yAxisContainer.call(d3.axisLeft(this.yScale))
 
+    this.symbolType = d3.scaleOrdinal(d3.symbolsFill)
+      .domain(d3.range(7))
+      .range(d3.symbols.map(s => d3.symbol().type(s)()))
+
     if (!isActivitiesView) {
       let that = this
       this.circles = this.bounds.selectAll('circle')
         .data(pcaData, d => d.participantId)
         .enter()
-        .append('circle')
-        .attr('cx', d => this.xScale(d.x))
-        .attr('cy', d => this.yScale(d.y))
-        .attr('r', 5)
-        .attr('fill', d => this.colors[d.c])
+        .append('path')
+        .attr("d", d => this.symbolType(d.c + 1))
+        .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
+        .attr('fill', d => CONSTANTS.ACTIVE_COLOR)
         .attr("stroke", "black")
         .attr("stroke-width", 1)
         // for the tooltip
@@ -104,6 +107,7 @@ export default class PCAChart {
             let selectedCircles = that.circles.filter(innerD => innerD.c === d.c)
             selectedCircles.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
               .attr("stroke-width", 1.5)
+              .raise()
             CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: selectedCircles.data().map(d => d.participantId) })
           }
         })
@@ -113,9 +117,9 @@ export default class PCAChart {
         .data(pcaData, d => d.venueId)
         .enter()
         .append('path')
-        .attr("d", d3.symbol().type(d3.symbolStar).size(100))
+        .attr("d", d => this.symbolType(d.c + 1))
         .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
-        .attr('fill', d => this.colors[d.c])
+        .attr('fill', d => (d.venueType == 0) ? CONSTANTS.MAP_TO_COLOR["Pub"] : CONSTANTS.MAP_TO_COLOR["Restaurant"])
         .attr("stroke", "black")
         .attr("stroke-width", 1)
         // for the tooltip
@@ -148,6 +152,7 @@ export default class PCAChart {
             let selectedStars = that.stars.filter(innerD => innerD.c === d.c)
             selectedStars.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
               .attr("stroke-width", 1.5)
+              .raise()
             CONSTANTS.DISPATCHER.call('userSelection', null, { venueId: selectedStars.data().map(d => d.venueId) })
           }
         })
@@ -165,6 +170,7 @@ export default class PCAChart {
         x: +row[1],
         y: +row[2],
         z: +row[3],
+        venueType: +row[transformedData[0].length - 2],
         c: +row[transformedData[0].length - 1]
       })
       );
@@ -199,10 +205,10 @@ export default class PCAChart {
       this.circles = this.circles
         .data(pcaData, d => d.participantId)
         .join(
-          enter => enter.append('circle')
-            .attr('cx', d => this.xScale(d.x))
-            .attr('cy', d => this.yScale(d.y))
-            .attr('fill', d => this.colors[d.c])
+          enter => enter.append('path')
+            .attr("d", d => this.symbolType(d.c + 1))
+            .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
+            .attr('fill', CONSTANTS.ACTIVE_COLOR)
             .attr("stroke", "black")
             // tooltip
             .on('mouseover', function (event, d) {
@@ -234,20 +240,20 @@ export default class PCAChart {
                 let selectedCircles = that.circles.filter(innerD => innerD.c === d.c)
                 selectedCircles.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
                   .attr("stroke-width", 1.5)
+                  .raise()
                 CONSTANTS.DISPATCHER.call('userSelection', null, { participantId: selectedCircles.data().map(d => d.participantId) })
               }
             })
-            .attr('r', 0)
+            .attr('opacity', 0)
             .transition()
             .duration(CONSTANTS.TRANSITION_DURATION)
-            .attr('r', 5),
-          update => update
+            .attr('opacity', 1),
+          update => update.attr('opacity', 1)
             .transition()
             .duration(CONSTANTS.TRANSITION_DURATION)
-            .attr('cx', d => this.xScale(d.x))
-            .attr('cy', d => this.yScale(d.y))
-            .attr('fill', d => this.colors[d.c])
-            .attr('r', 5),
+            .attr("d", d => this.symbolType(d.c + 1))
+            .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
+            .attr('opacity', 1),
           exit => exit.remove()
         )
     } else {
@@ -257,9 +263,9 @@ export default class PCAChart {
         .data(pcaData, d => d.venueId)
         .join(
           enter => enter.append('path')
-            .attr("d", d3.symbol().type(d3.symbolStar).size(100))
+            .attr("d", d => this.symbolType(d.c + 1))
             .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
-            .attr('fill', d => this.colors[d.c])
+            .attr('fill', d => (d.venueType == 0) ? CONSTANTS.MAP_TO_COLOR["Pub"] : CONSTANTS.MAP_TO_COLOR["Restaurant"])
             .attr("stroke", "black")
             // tooltip
             .on('mouseover', function (event, d) {
@@ -291,18 +297,21 @@ export default class PCAChart {
                 let selectedStars = that.stars.filter(innerD => innerD.c === d.c)
                 selectedStars.attr("stroke", CONSTANTS.PCA_SELECTION_COLOR)
                   .attr("stroke-width", 1.5)
+                  .raise()
                 CONSTANTS.DISPATCHER.call('userSelection', null, { venueId: selectedStars.data().map(d => d.venueId) })
               }
             })
-            .attr('r', 0)
+            .attr('opacity', 0)
             .transition()
             .duration(CONSTANTS.TRANSITION_DURATION)
-            .attr('r', 5),
-          update => update
+            .attr('opacity', 1),
+          update => update.attr('opacity', 1)
             .transition()
             .duration(CONSTANTS.TRANSITION_DURATION)
+            .attr("d", d => this.symbolType(d.c + 1))
             .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
-            .attr('fill', d => this.colors[d.c]),
+            .attr('fill', d => (d.venueType == 0) ? CONSTANTS.MAP_TO_COLOR["Pub"] : CONSTANTS.MAP_TO_COLOR["Restaurant"])
+            .attr('opacity', 1),
           exit => exit.remove()
         )
     }

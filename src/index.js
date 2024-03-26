@@ -128,7 +128,7 @@ window.app = (new class {
 
   async init() {
 
-    // TODO: Implement data cleaning functions in utils.js and here just call them before initializing charts
+    // First map the data to some useful structures
     let slicedBuildings = buildings.slice(1).map(d => (
       {
         buildingId: +d[0],
@@ -166,11 +166,6 @@ window.app = (new class {
         units: d.units ? JSON.parse(d.units) : null
       };
     });
-
-    // Create a tooltip SVG text element
-    const tooltip = d3.select('body').append('div')
-      .attr('id', 'tooltip')
-      .attr('style', 'position: absolute; opacity: 0; box-sizing: border-box; top: 0; left: -100000000px; padding: 4px 4px; font-family: sans-serif; font-size: 12px; color: #333; background-color: #eee; border: 1px solid #333; border-radius: 4px; pointer-events: none; z-index: 1;');
 
     let slicedParticipants = participants.slice(1) // map the data to the correct types
       .map(d => (
@@ -230,6 +225,11 @@ window.app = (new class {
     CONSTANTS.TOTAL_EARNINGS = d3.sum(slicedActivities, d => d.totalEarnings)
 
     // Now that data is ready, initialize the charts
+
+    // Create a tooltip SVG text element
+    const tooltip = d3.select('body').append('div')
+      .attr('id', 'tooltip')
+      .attr('style', 'position: absolute; opacity: 0; box-sizing: border-box; top: 0; left: -100000000px; padding: 4px 4px; font-family: sans-serif; font-size: 12px; color: #333; background-color: #eee; border: 1px solid #333; border-radius: 4px; pointer-events: none; z-index: 1;');
 
     this.initParticipants(slicedBuildings, slicedParticipants, false) // at the beginning, the view is participants view
 

@@ -61,15 +61,6 @@ html {
     flex: 1;
 }
 
-// .right,
-// .left,
-// .center,
-// .footer {
-//     margin: 2px;
-//     border: 2px solid #000;
-//     border-radius: 15px;
-//     -moz-border-radius: 15px;
-// }
 
 //following is all for the slider
 
@@ -98,7 +89,7 @@ html {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #69b3a2;
+    background-color: #386cb0;
     -webkit-transition: .4s;
     transition: .4s;
 }
@@ -116,7 +107,7 @@ html {
 }
 
 input:checked+.slider {
-    background-color: #BF5B17;
+    background-color: #7fc97f;
 }
 
 input:focus+.slider {

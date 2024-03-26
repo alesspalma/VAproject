@@ -87,7 +87,7 @@ export default class LinePlot {
       .append("path")
       .attr("class", "line")
       .attr("d", d => this.line(d.values))
-      .attr("stroke", d => (d.values[0].venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+      .attr("stroke", d => CONSTANTS.MAP_TO_COLOR[d.values[0].venueType])
       .attr("stroke-width", 2)
       .attr("fill", "none");
   }
@@ -123,7 +123,7 @@ export default class LinePlot {
         enter => enter.append("path")
           .attr("class", "line")
           .attr("d", d => this.line(d.values))
-          .attr("stroke", d => (d.values[0].venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+          .attr("stroke", d => CONSTANTS.MAP_TO_COLOR[d.values[0].venueType])
           .attr("fill", "none")
           .attr("stroke-width", 0)
           .transition()
@@ -132,7 +132,8 @@ export default class LinePlot {
         update => update
           .transition()
           .duration(CONSTANTS.TRANSITION_DURATION)
-          .attr("d", d => this.line(d.values)),
+          .attr("d", d => this.line(d.values))
+          .attr("stroke-width", 2),
         exit => exit.remove()
       );
   }

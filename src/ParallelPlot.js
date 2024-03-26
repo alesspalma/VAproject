@@ -75,10 +75,10 @@ export default class ParallelPlot {
       .style("fill", "none")
       .style("stroke", CONSTANTS.ACTIVE_COLOR)
       .style("stroke-width", this.isActivitiesView ? 2 : 1)
-      .style("opacity", 0.6)
+    // .style("opacity", 0.6)
 
     if (isActivitiesView) {
-      this.linesPP.style("stroke", d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+      this.linesPP.style("stroke", d => CONSTANTS.MAP_TO_COLOR[d.venueType])
     }
 
     // Draw the axes
@@ -132,7 +132,7 @@ export default class ParallelPlot {
   updateChart(participantIds) {
     this.linesPP.style("stroke", CONSTANTS.INACTIVE_COLOR)
       .filter(d => participantIds.includes(this.isActivitiesView ? d.venueId : d.participantId))
-      .style("stroke", this.isActivitiesView ? (d => (d.venueType == "Pub") ? CONSTANTS.BUILDINGS_COLORS[2] : CONSTANTS.BUILDINGS_COLORS[3])
+      .style("stroke", this.isActivitiesView ? (d => CONSTANTS.MAP_TO_COLOR[d.venueType])
         : CONSTANTS.ACTIVE_COLOR)
       .raise()
   }

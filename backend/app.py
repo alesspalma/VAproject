@@ -55,6 +55,11 @@ def pca_participant():
 
     d = df.values
 
+    #clusters = KMeans(n_clusters=6, random_state=1, n_init=10).fit_predict(d)
+    clusters = GaussianMixture(
+        n_components=4, n_init=10, init_params="random_from_data", random_state=0
+    ).fit_predict(d)
+
     # Perform PCA
     # normalize the data with StandardScaler
     d_std = preprocessing.StandardScaler().fit_transform(d)
@@ -66,9 +71,9 @@ def pca_participant():
     d_pca = numpy.insert(d_pca, 0, df1["participantId"], axis=1)
     # perform kmeans on the first 2 principal components
     # clusters = KMeans(n_clusters=4, random_state=1, n_init=10).fit_predict(d_pca[:, 1:3])
-    clusters = GaussianMixture(
-        n_components=4, n_init=10, init_params="random_from_data", random_state=0
-    ).fit_predict(d_pca[:, 1:3])
+    # clusters = GaussianMixture(
+    #     n_components=4, n_init=10, init_params="random_from_data", random_state=0
+    # ).fit_predict(d_pca[:, 1:3])
     # clusters = DBSCAN().fit_predict(d_pca[:, 1:3])
 
     # print(len(clusters))
@@ -100,15 +105,18 @@ def pca_activities():
         ]
     ]
 
-    if "venueType" in df.columns:
-        value_map_d = {
+    value_map_d = {
             "Pub": 0,
             "Restaurant": 1,
         }
+
+    if "venueType" in df.columns:
         # df.loc[:, "venueType"] = df["venueType"].apply(lambda x: value_map_d.get(x))
         df.loc[:, "venueType"] = df["venueType"].map(value_map_d)
 
     d = df.values
+
+    clusters = KMeans(n_clusters=3, random_state=1, n_init=10).fit_predict(d)
 
     # Perform PCA
     # normalize the data with StandardScaler
@@ -119,10 +127,14 @@ def pca_activities():
 
     # insert the venueId column
     d_pca = numpy.insert(d_pca, 0, df1["venueId"], axis=1)
+
+    # insert venueType as last column
+    d_pca = numpy.insert(d_pca, len(d_pca[0]), df1["venueType"].map(value_map_d), axis=1)
+
     # perform kmeans on the first 2 principal components
-    clusters = KMeans(n_clusters=3, random_state=1, n_init=10).fit_predict(
-        d_pca[:, 1:3]
-    )
+    # clusters = KMeans(n_clusters=3, random_state=1, n_init=10).fit_predict(
+    #     d_pca[:, 1:3]
+    # )
     # clusters = GaussianMixture(n_components=3, n_init=10, init_params='random_from_data', random_state=0).fit_predict(d_pca[:, 1:3])
     # clusters = DBSCAN().fit_predict(d_pca[:, 1:3])
 
