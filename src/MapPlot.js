@@ -225,8 +225,8 @@ export default class MapPlot {
 
             // Update the toolbox
             this.toolboxData.set("Participants selected: ", participantsData.length)
-            this.toolboxData.set("Avg Engel's coeff: ", d3.mean(participantsData, d => d.engels).toFixed(2))
-            this.toolboxData.set("Avg Joviality: ", d3.mean(participantsData, d => d.joviality).toFixed(2))
+            this.toolboxData.set("Avg Engel's coeff: ", participantIds.length == 0 ? 0 : d3.mean(participantsData, d => d.engels).toFixed(2))
+            this.toolboxData.set("Avg Joviality: ", participantIds.length == 0 ? 0 : d3.mean(participantsData, d => d.joviality).toFixed(2))
             this.toolbox.data(this.toolboxData)
                 .text(d => d[0] + d[1].toString())
                 .attr('fill', CONSTANTS.ACTIVE_COLOR)
