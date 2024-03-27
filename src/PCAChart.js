@@ -13,8 +13,8 @@ export default class PCAChart {
         left: 30
       }
     }
-    this.colors = ['rgb(127,201,127)', 'rgb(240,2,127)', 'rgb(191,91,23)', 'rgb(102,102,102)']
     this.selectedCluster = null
+    this.legendVerticalPadding = 18
   }
 
   async initChart(sel, data, isActivitiesView) {
@@ -62,19 +62,48 @@ export default class PCAChart {
     this.xAxisContainer.call(d3.axisBottom(this.xScale))
     this.yAxisContainer.call(d3.axisLeft(this.yScale))
 
-    this.symbolType = d3.scaleOrdinal(d3.symbolsFill)
+    this.symbolType = d3.scaleOrdinal()
       .domain(d3.range(7))
-      .range(d3.symbols.map(s => d3.symbol().type(s)()))
+      .range(d3.symbolsFill.map(s => d3.symbol().type(s).size(150)()))
+    this.symbolTypeLegend = d3.scaleOrdinal()
+      .domain(d3.range(7))
+      .range(d3.symbolsFill.map(s => d3.symbol().type(s).size(75)()))
+
+    // Draw the legend
+    let legendWrapper = this.svg.append('g')
+      .attr('transform', `translate(${margin.left}, ${margin.top})`)
+      .attr('class', 'legend_wrapper')
+
+    legendWrapper.selectAll('.legend_symbol')
+      .data(d3.range(d3.max(pcaData, d => d.c) + 1))
+      .enter()
+      .append('path')
+      .attr('class', 'legend_symbol')
+      .attr("d", d => this.symbolTypeLegend(d + 1))
+      .attr('transform', (d, i) => `translate(${this.dimensions.boundedWidth - 70}, ${this.dimensions.boundedHeight - 5 - i * this.legendVerticalPadding})`)
+      .attr('fill', "none")
+      .attr("stroke", "black")
+      .attr("stroke-width", 1.5)
+
+    legendWrapper.selectAll('.legend_label')
+      .data(d3.range(d3.max(pcaData, d => d.c) + 1))
+      .enter()
+      .append('text')
+      .attr('class', 'legend_label')
+      .attr('x', this.dimensions.boundedWidth - 60)
+      .attr('y', (d, i) => this.dimensions.boundedHeight - i * this.legendVerticalPadding)
+      .text(d => "Cluster " + (d + 1))
+      .attr('font-size', '15px')
 
     if (!isActivitiesView) {
       let that = this
-      this.circles = this.bounds.selectAll('circle')
+      this.circles = this.bounds.selectAll('pca_points')
         .data(pcaData, d => d.participantId)
         .enter()
         .append('path')
         .attr("d", d => this.symbolType(d.c + 1))
         .attr("transform", d => `translate(${this.xScale(d.x)}, ${this.yScale(d.y)})`)
-        .attr('fill', d => CONSTANTS.ACTIVE_COLOR)
+        .attr('fill', CONSTANTS.ACTIVE_COLOR)
         .attr("stroke", "black")
         .attr("stroke-width", 1)
         // for the tooltip
@@ -113,7 +142,7 @@ export default class PCAChart {
         })
     } else {
       let that = this
-      this.stars = this.bounds.selectAll('stars')
+      this.stars = this.bounds.selectAll('pca_points')
         .data(pcaData, d => d.venueId)
         .enter()
         .append('path')

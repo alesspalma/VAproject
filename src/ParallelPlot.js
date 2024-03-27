@@ -75,7 +75,7 @@ export default class ParallelPlot {
       .style("fill", "none")
       .style("stroke", CONSTANTS.ACTIVE_COLOR)
       .style("stroke-width", this.isActivitiesView ? 2 : 1)
-    // .style("opacity", 0.6)
+      .style("opacity", 0.8)
 
     if (isActivitiesView) {
       this.linesPP.style("stroke", d => CONSTANTS.MAP_TO_COLOR[d.venueType])
@@ -90,7 +90,9 @@ export default class ParallelPlot {
       // I translate this axis element to its correct position on the x axis
       .attr("transform", function (d) { return "translate(" + x(d) + ")"; })
       // And I build the axis with the call function
-      .each(function (d) { d3.select(this).call(d3.axisLeft().scale(y[d])); }) // "this" refers to the g tag
+      .each(function (d) { // "this" refers to the g tag
+        d3.select(this).call((d == dimensions[dimensions.length - 1]) ? d3.axisRight().scale(y[d]) : d3.axisLeft().scale(y[d]));
+      })
       // Add axis title
       .call(g => g.append("text")
         .style("text-anchor", "middle")
