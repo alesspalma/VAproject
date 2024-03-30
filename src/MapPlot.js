@@ -119,6 +119,16 @@ export default class MapPlot {
                 .attr("fill", CONSTANTS.ACTIVE_COLOR)
                 .attr("stroke", "black")
                 .attr("stroke-width", 5)
+                // for the tooltip
+                .on('mouseover', function (event, d) {
+                    d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.participantId)
+                })
+                .on('mouseout', function () {
+                    d3.select('#tooltip').style('opacity', 0)
+                })
+                .on('mousemove', function (event) {
+                    d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+                })
 
             // Create a toolbox group of text elements in the top right corner
             this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Participants selected: ", 0], ["Avg Engel's coeff: ", 0], ["Avg Joviality: ", 0]])
@@ -174,7 +184,17 @@ export default class MapPlot {
                 .attr("r", 60)
                 .attr("fill", d => CONSTANTS.MAP_TO_COLOR[d.venueType])
                 .attr("stroke", "black")
-                .attr("stroke-width", 10);
+                .attr("stroke-width", 10)
+                // for the tooltip
+                .on('mouseover', function (event, d) {
+                    d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.venueId)
+                })
+                .on('mouseout', function () {
+                    d3.select('#tooltip').style('opacity', 0)
+                })
+                .on('mousemove', function (event) {
+                    d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+                })
 
             // Create a toolbox group of text elements in the top right corner
             this.toolboxData = new Map([["Engagement, Ohio, USA", ""], ["Activities selected: ", 0], ["Percentage of Turnover: ", 0]])
@@ -206,7 +226,7 @@ export default class MapPlot {
             }
         })
         )
-
+        this.participants.raise()
     }
 
     updateChart(participantsData) {
@@ -215,8 +235,22 @@ export default class MapPlot {
 
             // Update the circles
             this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
+                // remove the tooltip
+                .on('mouseover', null)
+                .on('mouseout', null)
+                .on('mousemove', null)
                 .filter(d => participantIds.includes(d.participantId))
                 .attr('fill', CONSTANTS.ACTIVE_COLOR)
+                // reinsert the tooltip
+                .on('mouseover', function (event, d) {
+                    d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.participantId)
+                })
+                .on('mouseout', function () {
+                    d3.select('#tooltip').style('opacity', 0)
+                })
+                .on('mousemove', function (event) {
+                    d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+                })
                 .raise()
                 .attr('r', 120)
                 .transition()
@@ -239,8 +273,22 @@ export default class MapPlot {
 
             // Update the circles
             this.participants.attr('fill', CONSTANTS.INACTIVE_COLOR)
+                // remove the tooltip
+                .on('mouseover', null)
+                .on('mouseout', null)
+                .on('mousemove', null)
                 .filter(d => activitiesIds.includes(d.venueId))
                 .attr('fill', d => CONSTANTS.MAP_TO_COLOR[d.venueType])
+                // reinsert the tooltip
+                .on('mouseover', function (event, d) {
+                    d3.select('#tooltip').style('opacity', 1).text('ID: ' + d.venueId)
+                })
+                .on('mouseout', function () {
+                    d3.select('#tooltip').style('opacity', 0)
+                })
+                .on('mousemove', function (event) {
+                    d3.select('#tooltip').style('left', (event.pageX - 45) + 'px').style('top', (event.pageY - 30) + 'px')
+                })
                 .raise()
                 .attr('r', 180)
                 .transition()
